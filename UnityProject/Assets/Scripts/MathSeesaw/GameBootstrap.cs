@@ -1,0 +1,389 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace MathSeesaw
+{
+    public class GameBootstrap : MonoBehaviour
+    {
+        [Header("Level Data (L_1)")]
+        public int curLevel = 1;
+        public int[] numbers = { 1, 4, 2, 3 };
+
+        [Header("Layout")]
+        public float beamLength = 6.6f;
+        public float panOffsetX = 2.5f;
+        public float manHeight = 1.05f;
+
+        static readonly Color SkyColor = new Color(0.4235f, 0.8392f, 0.9961f);
+        static readonly Color IceColor = new Color(0.86f, 0.94f, 1f);
+        static readonly Color IceDarkColor = new Color(0.62f, 0.78f, 0.92f);
+        static readonly Color PanColor = new Color(0.72f, 0.42f, 0.92f);
+        static readonly Color SeatColor = new Color(0.88f, 0.66f, 1f);
+
+        static readonly Color[] ManColors =
+        {
+            new Color(0.95f, 0.28f, 0.28f),
+            new Color(0.25f, 0.56f, 1f),
+            new Color(0.32f, 0.83f, 0.35f),
+            new Color(1f, 0.74f, 0.12f),
+            new Color(0.72f, 0.42f, 0.95f),
+            new Color(1f, 0.5f, 0.15f),
+        };
+
+        Material m_baseLitMat;
+        Font m_font;
+
+        void Awake()
+        {
+            m_baseLitMat = Resources.Load<Material>("Mats/mat_Seesaw");
+            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var cam = BuildCamera();
+            BuildLight();
+            BuildEnvironment();
+
+            var level = gameObject.AddComponent<LevelController>();
+            level.cam = cam;
+            BuildSeesaw(level);
+            BuildPutMans(level);
+
+            var ui = gameObject.AddComponent<GameUI>();
+            ui.Build(curLevel);
+            level.ui = ui;
+        }
+
+        Camera BuildCamera()
+        {
+            var go = new GameObject("Main Camera");
+            go.tag = "MainCamera";
+            var cam = go.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = SkyColor;
+            cam.fieldOfView = 50f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 100f;
+            go.transform.SetPositionAndRotation(new Vector3(0f, 3.4f, -9.5f), Quaternion.Euler(13f, 0f, 0f));
+            go.AddComponent<AudioListener>();
+            return cam;
+        }
+
+        void BuildLight()
+        {
+            var go = new GameObject("Directional Light");
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.15f;
+            light.color = Color.white;
+            light.shadows = LightShadows.Soft;
+            light.shadowStrength = 0.35f;
+            go.transform.rotation = Quaternion.Euler(48f, -22f, 0f);
+
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.55f, 0.6f, 0.66f);
+        }
+
+        void BuildEnvironment()
+        {
+            var root = new GameObject("Environment").transform;
+
+            var stage = CreatePart(PrimitiveType.Cylinder, root, "Stage", IceColor,
+                new Vector3(0f, -1.35f, 0.8f), new Vector3(11.5f, 0.75f, 10f));
+            stage.GetComponent<Renderer>().material.SetFloat("_Smoothness", 0.25f);
+
+            CreatePart(PrimitiveType.Cylinder, root, "StageBase", IceDarkColor,
+                new Vector3(0f, -2.3f, 0.8f), new Vector3(12.8f, 0.65f, 11.2f));
+
+            string[] cloudNames = { "Prefabs/Cloud_0", "Prefabs/Cloud_1", "Prefabs/Cloud_2" };
+            Vector3[] cloudPos = { new Vector3(-4.5f, 3.9f, 8f), new Vector3(4.5f, 4.8f, 10f), new Vector3(0f, 5.6f, 12.5f) };
+            var cloudMat = MakeLit(Color.white);
+            cloudMat.SetFloat("_Smoothness", 0f);
+            for (int i = 0; i < 3; i++)
+            {
+                var prefab = Resources.Load<GameObject>(cloudNames[i]);
+                if (prefab == null) continue;
+                var cloud = Instantiate(prefab, root);
+                NormalizeSize(cloud.transform, 3.2f + i * 0.5f, Axis.X);
+                cloud.transform.position = cloudPos[i];
+                cloud.AddComponent<CloudDrift>().speed = 0.12f + i * 0.05f;
+                StripColliders(cloud);
+                foreach (var r in cloud.GetComponentsInChildren<Renderer>())
+                    r.sharedMaterial = cloudMat;
+            }
+        }
+
+        void BuildSeesaw(LevelController level)
+        {
+            var root = new GameObject("Seesaw").transform;
+            root.position = new Vector3(0f, -0.6f, 1.2f);
+
+            CreatePart(PrimitiveType.Cube, root, "Base", PanColor,
+                new Vector3(0f, 0.15f, 0f), new Vector3(2f, 0.3f, 1.2f));
+
+            BuildFulcrum(root);
+
+            var up = new GameObject("up").transform;
+            up.SetParent(root, false);
+            up.localPosition = new Vector3(0f, 1.85f, 0f);
+
+            float beamTop = BuildBeam(up);
+
+            var blance = root.gameObject.AddComponent<Blance>();
+            blance.upComponent = up;
+            blance.leftPan = BuildPan(up, true, new Vector3(-panOffsetX, beamTop, 0f));
+            blance.rightPan = BuildPan(up, false, new Vector3(panOffsetX, beamTop, 0f));
+
+            level.blance = blance;
+            level.leftPan = blance.leftPan;
+            level.rightPan = blance.rightPan;
+        }
+
+        void BuildFulcrum(Transform root)
+        {
+            var go = new GameObject("Fulcrum", typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(root, false);
+            go.transform.localPosition = new Vector3(0f, 0.3f, 0f);
+            go.GetComponent<MeshFilter>().mesh = BuildPrismMesh(1.8f, 1.55f, 0.8f);
+            go.GetComponent<MeshRenderer>().material = m_baseLitMat;
+        }
+
+        float BuildBeam(Transform up)
+        {
+            var prefab = Resources.Load<GameObject>("Prefabs/BalanceBeam");
+            if (prefab != null)
+            {
+                var beam = Instantiate(prefab, up);
+                StripColliders(beam);
+                var b = GetBounds(beam.transform);
+                if (b.size.z > b.size.x)
+                    beam.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                b = GetBounds(beam.transform);
+                float k = beamLength / Mathf.Max(b.size.x, 0.001f);
+                beam.transform.localScale *= k;
+                b = GetBounds(beam.transform);
+                beam.transform.position += up.position - b.center;
+                b = GetBounds(beam.transform);
+                return b.max.y - up.position.y;
+            }
+            var cube = CreatePart(PrimitiveType.Cube, up, "Beam", PanColor,
+                Vector3.zero, new Vector3(beamLength, 0.25f, 0.7f));
+            return 0.125f;
+        }
+
+        NumContainerPan BuildPan(Transform up, bool isLeft, Vector3 localPos)
+        {
+            var panGo = new GameObject(isLeft ? "LeftPan" : "RightPan");
+            panGo.transform.SetParent(up, false);
+            panGo.transform.localPosition = localPos;
+            var pan = panGo.AddComponent<NumContainerPan>();
+
+            CreatePart(PrimitiveType.Cube, panGo.transform, "Tray", PanColor,
+                new Vector3(0f, 0.09f, 0f), new Vector3(2.5f, 0.18f, 1.05f));
+            CreatePart(PrimitiveType.Cube, panGo.transform, "TrayLipL", PanColor,
+                new Vector3(-1.3f, 0.26f, 0f), new Vector3(0.12f, 0.36f, 1.05f));
+            CreatePart(PrimitiveType.Cube, panGo.transform, "TrayLipR", PanColor,
+                new Vector3(1.3f, 0.26f, 0f), new Vector3(0.12f, 0.36f, 1.05f));
+
+            float[] xs = { -0.9f, -0.3f, 0.3f, 0.9f };
+            foreach (float x in xs)
+            {
+                var seat = CreatePart(PrimitiveType.Cylinder, panGo.transform, "Seat", SeatColor,
+                    new Vector3(x, 0.22f, 0f), new Vector3(0.5f, 0.045f, 0.5f));
+                var stand = new GameObject("StandPoint").transform;
+                stand.SetParent(panGo.transform, false);
+                stand.localPosition = new Vector3(x, 0.24f, 0f);
+
+                var place = panGo.AddComponent<ManPlace>();
+                place.container = pan;
+                place.isLeft = isLeft;
+                place.standPoint = stand;
+                place.seatRenderer = seat.GetComponent<Renderer>();
+                pan.places.Add(place);
+            }
+
+            pan.textTotal = BuildScoreBubble(panGo.transform);
+            return pan;
+        }
+
+        TextMesh BuildScoreBubble(Transform pan)
+        {
+            var holder = new GameObject("ScoreBubble");
+            holder.transform.SetParent(pan, false);
+            holder.transform.localPosition = new Vector3(0f, 1.75f, 0f);
+            holder.AddComponent<FaceCamera>();
+
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            StripColliders(quad);
+            quad.name = "Bg";
+            quad.transform.SetParent(holder.transform, false);
+            quad.transform.localScale = new Vector3(1f, 0.66f, 1f);
+            var mat = MakeLit(Color.white);
+            mat.SetFloat("_Smoothness", 0f);
+            quad.GetComponent<Renderer>().material = mat;
+
+            var text = CreateTextMesh(holder.transform, "0", 0.55f, Color.black);
+            text.transform.localPosition = new Vector3(0f, 0f, -0.03f);
+            return text;
+        }
+
+        void BuildPutMans(LevelController level)
+        {
+            var prefab = Resources.Load<GameObject>("Prefabs/SeesawAvatar");
+            var root = new GameObject("putMans").transform;
+
+            var nums = new List<int>(numbers);
+            for (int i = 0; i < nums.Count; i++)
+            {
+                int j = Random.Range(i, nums.Count);
+                (nums[i], nums[j]) = (nums[j], nums[i]);
+            }
+
+            int count = nums.Count;
+            float spacing = 1.15f;
+            float x0 = -(count - 1) * spacing * 0.5f;
+
+            for (int i = 0; i < count; i++)
+            {
+                var go = Instantiate(prefab, root);
+                go.name = $"PutMan_{i}";
+                NormalizeSize(go.transform, manHeight, Axis.Y);
+                go.transform.position = new Vector3(x0 + i * spacing, -0.6f, -1.7f);
+                go.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+
+                var man = go.AddComponent<PutMan>();
+                man.avatarAnimator = go.GetComponent<SeesawAvatarAnimator>();
+
+                var rend = man.avatarAnimator.MeshRenderer;
+                rend.material.color = ManColors[i % ManColors.Length];
+
+                var box = go.AddComponent<BoxCollider>();
+                var b = GetBounds(go.transform);
+                box.center = go.transform.InverseTransformPoint(b.center);
+                Vector3 size = go.transform.InverseTransformVector(b.size);
+                box.size = new Vector3(Mathf.Abs(size.x) + 0.25f, Mathf.Abs(size.y), Mathf.Abs(size.z) + 0.25f);
+                man.pickCollider = box;
+
+                var holder = new GameObject("NumHolder");
+                holder.transform.SetParent(go.transform, false);
+                holder.transform.localPosition = new Vector3(0f, manHeight * 0.52f / go.transform.localScale.y, 0f);
+                holder.transform.localScale = Vector3.one / go.transform.localScale.y;
+                holder.AddComponent<FaceCamera>();
+                man.textNum = CreateTextMesh(holder.transform, "0", 0.42f, Color.white);
+                man.textNum.transform.localPosition = new Vector3(0f, 0f, -0.28f);
+
+                man.Init(nums[i], false);
+                man.SaveInitState();
+                man.PlayIdle();
+                man.avatarAnimator.Animator.Play("idle", 0, Random.value);
+
+                level.putMans.Add(man);
+            }
+        }
+
+        GameObject CreatePart(PrimitiveType type, Transform parent, string name, Color color, Vector3 localPos, Vector3 localScale)
+        {
+            var go = GameObject.CreatePrimitive(type);
+            StripColliders(go);
+            go.name = name;
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            go.transform.localScale = localScale;
+            go.GetComponent<Renderer>().material = MakeLit(color);
+            return go;
+        }
+
+        Material MakeLit(Color color)
+        {
+            var mat = new Material(m_baseLitMat.shader);
+            mat.SetColor("_BaseColor", color);
+            mat.SetFloat("_Smoothness", 0.15f);
+            mat.SetFloat("_Metallic", 0f);
+            return mat;
+        }
+
+        TextMesh CreateTextMesh(Transform parent, string content, float worldSize, Color color)
+        {
+            var go = new GameObject("Text");
+            go.transform.SetParent(parent, false);
+            var tm = go.AddComponent<TextMesh>();
+            tm.text = content;
+            tm.font = m_font;
+            tm.fontSize = 80;
+            tm.characterSize = worldSize * 0.1f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = color;
+            tm.fontStyle = FontStyle.Bold;
+            go.GetComponent<MeshRenderer>().material = m_font.material;
+            return tm;
+        }
+
+        enum Axis { X, Y }
+
+        static void NormalizeSize(Transform t, float target, Axis axis)
+        {
+            var b = GetBounds(t);
+            float size = axis == Axis.X ? b.size.x : b.size.y;
+            if (size > 0.0001f)
+                t.localScale *= target / size;
+        }
+
+        static Bounds GetBounds(Transform t)
+        {
+            var rends = t.GetComponentsInChildren<Renderer>();
+            var b = new Bounds(t.position, Vector3.zero);
+            bool first = true;
+            foreach (var r in rends)
+            {
+                if (first) { b = r.bounds; first = false; }
+                else b.Encapsulate(r.bounds);
+            }
+            return b;
+        }
+
+        static void StripColliders(GameObject go)
+        {
+            foreach (var c in go.GetComponentsInChildren<Collider>())
+                Destroy(c);
+        }
+
+        static Mesh BuildPrismMesh(float width, float height, float depth)
+        {
+            float hw = width * 0.5f, hd = depth * 0.5f;
+            var p0 = new Vector3(-hw, 0f, -hd);
+            var p1 = new Vector3(hw, 0f, -hd);
+            var p2 = new Vector3(0f, height, -hd);
+            var p3 = new Vector3(-hw, 0f, hd);
+            var p4 = new Vector3(hw, 0f, hd);
+            var p5 = new Vector3(0f, height, hd);
+
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+
+            void AddTri(Vector3 a, Vector3 b, Vector3 c)
+            {
+                int i = verts.Count;
+                verts.Add(a); verts.Add(b); verts.Add(c);
+                tris.Add(i); tris.Add(i + 1); tris.Add(i + 2);
+            }
+            void AddQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+            {
+                AddTri(a, b, c);
+                AddTri(a, c, d);
+            }
+
+            AddTri(p0, p2, p1);
+            AddTri(p3, p4, p5);
+            AddQuad(p0, p3, p5, p2);
+            AddQuad(p1, p2, p5, p4);
+            AddQuad(p0, p1, p4, p3);
+
+            var mesh = new Mesh();
+            mesh.SetVertices(verts);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+    }
+}

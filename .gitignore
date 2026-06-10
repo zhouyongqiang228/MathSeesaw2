@@ -1,0 +1,51 @@
+# macOS
+.DS_Store
+
+# Local/editor settings
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Unity cache and generated files
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+
+# Unity crash reports
+sysinfo.txt
+crashlytics-build.properties
+
+# Unity asset store / package manager local state
+AssetStoreTools*
+UnityProject/.plastic/
+UnityProject/ignore.conf
+
+# Tool-generated local memory accidentally placed under the project
+UnityProject/C:*
