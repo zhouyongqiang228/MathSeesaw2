@@ -10,6 +10,9 @@ namespace MathSeesaw
         public int curLevel = 1;
         public int[] numbers = { 1, 4, 2, 3 };
 
+        [Header("Seesaw Mode")]
+        public SeesawMode seesawMode = SeesawMode.Single;
+
         [Header("Layout")]
         public float beamLength = 6.6f;
         public float panOffsetX = 2.5f;
@@ -45,11 +48,15 @@ namespace MathSeesaw
 
             var level = gameObject.AddComponent<LevelController>();
             level.cam = cam;
-            BuildSeesaw(level);
+            level.seesawMode = seesawMode;
+            BuildSeesaws(level);
             BuildPutMans(level);
 
             var ui = gameObject.AddComponent<GameUI>();
-            ui.Build(curLevel);
+            ui.Build(curLevel, seesawMode, (SeesawMode mode) => {
+                seesawMode = mode;
+                level.SwitchSeesawMode(mode);
+            });
             level.ui = ui;
         }
 
@@ -112,10 +119,32 @@ namespace MathSeesaw
             }
         }
 
-        void BuildSeesaw(LevelController level)
+        void BuildSeesaws(LevelController level)
         {
-            var root = new GameObject("Seesaw").transform;
-            root.position = new Vector3(0f, -0.6f, 1.2f);
+            // Always create both seesaws, but activate based on mode
+            var seesaw1 = BuildSeesaw(new Vector3(0f, 0f, 1.2f), 0);   // Front seesaw (original position)
+            var seesaw2 = BuildSeesaw(new Vector3(0f, 0f, 6.5f), 1);   // Back seesaw (far back)
+            level.seesaws.Add(seesaw1);
+            level.seesaws.Add(seesaw2);
+
+            // Set initial visibility based on mode
+            if (seesawMode == SeesawMode.Single)
+            {
+                seesaw1.transform.position = new Vector3(0f, -0.6f, 1.2f); // Center position for single mode
+                seesaw2.gameObject.SetActive(false);
+            }
+            else
+            {
+                // Both active in double mode, positions already set
+                seesaw1.gameObject.SetActive(true);
+                seesaw2.gameObject.SetActive(true);
+            }
+        }
+
+        Blance BuildSeesaw(Vector3 offset, int index)
+        {
+            var root = new GameObject($"Seesaw_{index}").transform;
+            root.position = new Vector3(0f, -0.6f, 1.2f) + offset;
 
             CreatePart(PrimitiveType.Cube, root, "Base", PanColor,
                 new Vector3(0f, 0.15f, 0f), new Vector3(2f, 0.3f, 1.2f));
@@ -133,9 +162,7 @@ namespace MathSeesaw
             blance.leftPan = BuildPan(up, true, new Vector3(-panOffsetX, beamTop, 0f));
             blance.rightPan = BuildPan(up, false, new Vector3(panOffsetX, beamTop, 0f));
 
-            level.blance = blance;
-            level.leftPan = blance.leftPan;
-            level.rightPan = blance.rightPan;
+            return blance;
         }
 
         void BuildFulcrum(Transform root)

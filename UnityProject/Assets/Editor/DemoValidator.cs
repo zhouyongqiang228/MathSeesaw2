@@ -59,32 +59,53 @@ public static class DemoValidator
     {
         var level = Object.FindFirstObjectByType<LevelController>();
         var men = level.putMans;
+
+        // Get the first active seesaw
+        var seesaw = level.seesaws.Count > 0 ? level.seesaws[0] : null;
+        if (seesaw == null)
+        {
+            Debug.LogError("[Validator] No seesaw found");
+            return;
+        }
+
         foreach (var man in men)
         {
-            var pan = (man.InitNum == 1 || man.InitNum == 4) ? level.leftPan : level.rightPan;
+            var pan = (man.InitNum == 1 || man.InitNum == 4) ? seesaw.leftPan : seesaw.rightPan;
             var place = pan.GetNearestEmptyPlace(man.transform.position);
             place.SetMan(man);
         }
         level.UpdateScore();
-        Debug.Log($"[Validator] placed all, L={level.leftPan.TotalScore} R={level.rightPan.TotalScore}");
+        Debug.Log($"[Validator] placed all, L={seesaw.leftPan.TotalScore} R={seesaw.rightPan.TotalScore}");
     }
 
     static void Verify()
     {
         var level = Object.FindFirstObjectByType<LevelController>();
         bool ok = true;
-        if (level.leftPan.TotalScore != 5 || level.rightPan.TotalScore != 5)
+
+        // Get the first active seesaw
+        var seesaw = level.seesaws.Count > 0 ? level.seesaws[0] : null;
+        if (seesaw == null)
         {
-            Debug.LogError($"[Validator] totals wrong: {level.leftPan.TotalScore}/{level.rightPan.TotalScore}");
+            Debug.LogError("[Validator] No seesaw found");
             ok = false;
         }
-        float angle = level.blance.upComponent.localEulerAngles.z;
-        if (angle > 180f) angle -= 360f;
-        if (Mathf.Abs(angle) > 0.5f)
+        else
         {
-            Debug.LogError($"[Validator] beam not level: {angle}");
-            ok = false;
+            if (seesaw.leftPan.TotalScore != 5 || seesaw.rightPan.TotalScore != 5)
+            {
+                Debug.LogError($"[Validator] totals wrong: {seesaw.leftPan.TotalScore}/{seesaw.rightPan.TotalScore}");
+                ok = false;
+            }
+            float angle = seesaw.upComponent.localEulerAngles.z;
+            if (angle > 180f) angle -= 360f;
+            if (Mathf.Abs(angle) > 0.5f)
+            {
+                Debug.LogError($"[Validator] beam not level: {angle}");
+                ok = false;
+            }
         }
+
         var winPanel = GameObject.Find("WinPanel");
         if (winPanel == null)
         {

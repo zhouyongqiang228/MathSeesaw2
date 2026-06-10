@@ -7,11 +7,10 @@ namespace MathSeesaw
     public class LevelController : MonoBehaviour
     {
         public Camera cam;
-        public Blance blance;
-        public NumContainerPan leftPan;
-        public NumContainerPan rightPan;
+        public List<Blance> seesaws = new List<Blance>();
         public List<PutMan> putMans = new List<PutMan>();
         public GameUI ui;
+        public SeesawMode seesawMode = SeesawMode.Single;
 
         public float snapDistance = 1.6f;
         public float dragFollowSpeed = 22f;
@@ -24,10 +23,67 @@ namespace MathSeesaw
         Plane m_dragPlane;
         bool m_gameOver;
 
+        Vector3 m_singleCameraPos = new Vector3(0f, 3.4f, -9.5f);
+        Vector3 m_singleCameraRot = new Vector3(13f, 0f, 0f);
+        Vector3 m_doubleCameraPos = new Vector3(0f, 7f, -7f);
+        Vector3 m_doubleCameraRot = new Vector3(30f, 0f, 0f);
+
         void Start()
         {
-            blance.onRotateOver = CheckAndDealGameOver;
+            foreach (var seesaw in seesaws)
+                seesaw.onRotateOver = CheckAndDealGameOver;
             UpdateScore(true);
+            ApplyCameraSettings();
+        }
+
+        public void SwitchSeesawMode(SeesawMode mode)
+        {
+            seesawMode = mode;
+            ApplyCameraSettings();
+
+            // Show/hide seesaws based on mode
+            if (mode == SeesawMode.Single)
+            {
+                if (seesaws.Count > 0)
+                {
+                    seesaws[0].gameObject.SetActive(true);
+                    seesaws[0].transform.position = new Vector3(0f, -0.6f, 1.2f); // Center position
+                }
+                if (seesaws.Count > 1)
+                {
+                    seesaws[1].gameObject.SetActive(false);
+                }
+            }
+            else // Double mode
+            {
+                if (seesaws.Count > 0)
+                {
+                    seesaws[0].gameObject.SetActive(true);
+                    seesaws[0].transform.position = new Vector3(0f, -0.6f, 1.2f); // Front position (original)
+                }
+                if (seesaws.Count > 1)
+                {
+                    seesaws[1].gameObject.SetActive(true);
+                    seesaws[1].transform.position = new Vector3(0f, -0.6f, 6.5f); // Back position (far back)
+                }
+            }
+
+            // Update scores after switching
+            UpdateScore(true);
+        }
+
+        void ApplyCameraSettings()
+        {
+            if (seesawMode == SeesawMode.Single)
+            {
+                cam.transform.position = m_singleCameraPos;
+                cam.transform.rotation = Quaternion.Euler(m_singleCameraRot);
+            }
+            else
+            {
+                cam.transform.position = m_doubleCameraPos;
+                cam.transform.rotation = Quaternion.Euler(m_doubleCameraRot);
+            }
         }
 
         void Update()
@@ -114,16 +170,20 @@ namespace MathSeesaw
         {
             ManPlace best = null;
             float bestDist = snapDistance * snapDistance;
-            foreach (var pan in new[] { leftPan, rightPan })
+            foreach (var seesaw in seesaws)
             {
-                foreach (var p in pan.places)
+                if (!seesaw.gameObject.activeSelf) continue;
+                foreach (var pan in new[] { seesaw.leftPan, seesaw.rightPan })
                 {
-                    if (!p.IsEmpty) continue;
-                    float d = (p.standPoint.position - worldPos).sqrMagnitude;
-                    if (d < bestDist)
+                    foreach (var p in pan.places)
                     {
-                        bestDist = d;
-                        best = p;
+                        if (!p.IsEmpty) continue;
+                        float d = (p.standPoint.position - worldPos).sqrMagnitude;
+                        if (d < bestDist)
+                        {
+                            bestDist = d;
+                            best = p;
+                        }
                     }
                 }
             }
@@ -132,24 +192,40 @@ namespace MathSeesaw
 
         public void UpdateScore(bool immediate = false)
         {
-            leftPan.UpdateTotalScore();
-            rightPan.UpdateTotalScore();
-            blance.UpdateWeight(leftPan.TotalScore, rightPan.TotalScore, immediate);
+            foreach (var seesaw in seesaws)
+            {
+                if (!seesaw.gameObject.activeSelf) continue;
+                seesaw.leftPan.UpdateTotalScore();
+                seesaw.rightPan.UpdateTotalScore();
+                seesaw.UpdateWeight(seesaw.leftPan.TotalScore, seesaw.rightPan.TotalScore, immediate);
+            }
         }
 
         void CheckAndDealGameOver()
         {
             if (m_gameOver)
                 return;
-            if (leftPan.TotalScore != rightPan.TotalScore)
-                return;
+
+            // Check all active seesaws are balanced
+            foreach (var seesaw in seesaws)
+            {
+                if (!seesaw.gameObject.activeSelf) continue;
+                if (seesaw.leftPan.TotalScore != seesaw.rightPan.TotalScore)
+                    return;
+            }
+
+            // Check all putMans are placed
             foreach (var man in putMans)
                 if (man.CurPlace == null)
                     return;
 
             m_gameOver = true;
-            leftPan.OnGameWin();
-            rightPan.OnGameWin();
+            foreach (var seesaw in seesaws)
+            {
+                if (!seesaw.gameObject.activeSelf) continue;
+                seesaw.leftPan.OnGameWin();
+                seesaw.rightPan.OnGameWin();
+            }
             foreach (var man in putMans)
                 man.PlayVictory();
             if (ui != null)

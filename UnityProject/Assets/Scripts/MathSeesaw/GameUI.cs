@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
@@ -11,10 +12,12 @@ namespace MathSeesaw
 
         Font m_font;
         GameObject m_winPanel;
+        Action<SeesawMode> m_onModeChanged;
 
-        public void Build(int curLevel)
+        public void Build(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
         {
             m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            m_onModeChanged = onModeChanged;
 
             var canvasGo = new GameObject("Canvas_Battle", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasGo.transform.SetParent(transform, false);
@@ -28,9 +31,66 @@ namespace MathSeesaw
             var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(InputSystemUIInputModule));
             es.transform.SetParent(transform, false);
 
+            BuildSeesawModeToggle(canvasGo.transform, currentMode);
             BuildProgressBar(canvasGo.transform, curLevel);
             BuildReplayButton(canvasGo.transform);
             BuildWinPanel(canvasGo.transform);
+        }
+
+        void BuildSeesawModeToggle(Transform parent, SeesawMode currentMode)
+        {
+            var container = CreateImage(parent, "SeesawModeToggle", new Color(1f, 1f, 1f, 0.92f));
+            var rt = container.rectTransform;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(30f, -60f);
+            rt.sizeDelta = new Vector2(280f, 110f);
+
+            // Button for 1 seesaw
+            var btn1Img = CreateImage(container.transform, "Btn1", currentMode == SeesawMode.Single ? HighlightColor : new Color(0.7f, 0.7f, 0.7f));
+            var btn1Rt = btn1Img.rectTransform;
+            btn1Rt.anchorMin = new Vector2(0f, 0.5f);
+            btn1Rt.anchorMax = new Vector2(0f, 0.5f);
+            btn1Rt.pivot = new Vector2(0f, 0.5f);
+            btn1Rt.anchoredPosition = new Vector2(10f, 0f);
+            btn1Rt.sizeDelta = new Vector2(125f, 90f);
+            var btn1 = btn1Img.gameObject.AddComponent<Button>();
+            btn1.onClick.AddListener(() => SwitchMode(SeesawMode.Single, btn1Img, btn1));
+            var t1 = CreateText(btn1Img.transform, "1", 52, currentMode == SeesawMode.Single ? Color.white : new Color(0.3f, 0.3f, 0.3f));
+            Stretch(t1.rectTransform);
+            t1.fontStyle = FontStyle.Bold;
+
+            // Button for 2 seesaws
+            var btn2Img = CreateImage(container.transform, "Btn2", currentMode == SeesawMode.Double ? HighlightColor : new Color(0.7f, 0.7f, 0.7f));
+            var btn2Rt = btn2Img.rectTransform;
+            btn2Rt.anchorMin = new Vector2(1f, 0.5f);
+            btn2Rt.anchorMax = new Vector2(1f, 0.5f);
+            btn2Rt.pivot = new Vector2(1f, 0.5f);
+            btn2Rt.anchoredPosition = new Vector2(-10f, 0f);
+            btn2Rt.sizeDelta = new Vector2(125f, 90f);
+            var btn2 = btn2Img.gameObject.AddComponent<Button>();
+            btn2.onClick.AddListener(() => SwitchMode(SeesawMode.Double, btn2Img, btn2));
+            var t2 = CreateText(btn2Img.transform, "2", 52, currentMode == SeesawMode.Double ? Color.white : new Color(0.3f, 0.3f, 0.3f));
+            Stretch(t2.rectTransform);
+            t2.fontStyle = FontStyle.Bold;
+        }
+
+        void SwitchMode(SeesawMode mode, Image btnImg, Button btn)
+        {
+            m_onModeChanged?.Invoke(mode);
+
+            // Update all buttons visual state
+            var container = btnImg.transform.parent;
+            var btn1Img = container.Find("Btn1").GetComponent<Image>();
+            var btn2Img = container.Find("Btn2").GetComponent<Image>();
+            var btn1Text = btn1Img.transform.GetChild(0).GetComponent<Text>();
+            var btn2Text = btn2Img.transform.GetChild(0).GetComponent<Text>();
+
+            btn1Img.color = mode == SeesawMode.Single ? HighlightColor : new Color(0.7f, 0.7f, 0.7f);
+            btn2Img.color = mode == SeesawMode.Double ? HighlightColor : new Color(0.7f, 0.7f, 0.7f);
+            btn1Text.color = mode == SeesawMode.Single ? Color.white : new Color(0.3f, 0.3f, 0.3f);
+            btn2Text.color = mode == SeesawMode.Double ? Color.white : new Color(0.3f, 0.3f, 0.3f);
         }
 
         void BuildProgressBar(Transform parent, int curLevel)
