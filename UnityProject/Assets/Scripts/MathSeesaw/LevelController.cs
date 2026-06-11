@@ -225,7 +225,12 @@ namespace MathSeesaw
             {
                 if (m_hoverPlace != null) m_hoverPlace.SetHighlight(false);
                 m_hoverPlace = place;
-                if (m_hoverPlace != null) m_hoverPlace.SetHighlight(true);
+                if (m_hoverPlace != null)
+                {
+                    m_hoverPlace.SetHighlight(true);
+                    if (HapticManager.Instance != null)
+                        HapticManager.Instance.Selection();
+                }
             }
 
             // 更新半透明预览

@@ -14,6 +14,7 @@ namespace MathSeesaw
         [SerializeField] GameObject m_progressManagerPrefab;
         [SerializeField] GameObject m_audioManagerPrefab;
         [SerializeField] GameObject m_inputManagerPrefab;
+        [SerializeField] GameObject m_hapticManagerPrefab;
 
         void Awake()
         {
@@ -63,6 +64,18 @@ namespace MathSeesaw
             {
                 var go = new GameObject("MobileInputManager");
                 go.AddComponent<MobileInputManager>();
+                DontDestroyOnLoad(go);
+            }
+
+            // 初始化触觉反馈管理器
+            if (HapticManager.Instance == null && m_hapticManagerPrefab != null)
+            {
+                Instantiate(m_hapticManagerPrefab);
+            }
+            else if (HapticManager.Instance == null)
+            {
+                var go = new GameObject("HapticManager");
+                go.AddComponent<HapticManager>();
                 DontDestroyOnLoad(go);
             }
         }

@@ -9,6 +9,17 @@ namespace MathSeesaw
     {
         public static HapticManager Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Initialize()
+        {
+            if (Instance != null || FindObjectOfType<HapticManager>() != null)
+                return;
+
+            var manager = new GameObject("HapticManager");
+            manager.AddComponent<HapticManager>();
+            DontDestroyOnLoad(manager);
+        }
+
         void Awake()
         {
             if (Instance != null)
@@ -30,6 +41,21 @@ namespace MathSeesaw
 
 #if UNITY_IOS && !UNITY_EDITOR
             iOSHapticFeedback.Trigger(iOSHapticFeedback.iOSFeedbackType.ImpactLight);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            Handheld.Vibrate();
+#endif
+        }
+
+        /// <summary>
+        /// 选择反馈（拖拽到可放置座位）
+        /// </summary>
+        public void Selection()
+        {
+            if (!IsVibrationEnabled())
+                return;
+
+#if UNITY_IOS && !UNITY_EDITOR
+            iOSHapticFeedback.Trigger(iOSHapticFeedback.iOSFeedbackType.Selection);
 #elif UNITY_ANDROID && !UNITY_EDITOR
             Handheld.Vibrate();
 #endif
