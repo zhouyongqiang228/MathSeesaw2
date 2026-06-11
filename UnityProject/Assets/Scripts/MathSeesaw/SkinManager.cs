@@ -74,6 +74,9 @@ namespace MathSeesaw
         Renderer m_bgQuad;
         Text m_skinLabel;
         int m_index;
+        float m_bgTextureAspect = 1f;
+        float m_lastBgAspect = -1f;
+        float m_lastBgOrthoSize = -1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoCreate()
@@ -113,6 +116,8 @@ namespace MathSeesaw
             var kb = Keyboard.current;
             if (kb != null && kb.bKey.wasPressedThisFrame)
                 Next();
+
+            UpdateBackgroundQuadLayout();
         }
 
         static Renderer FindRenderer(string name)
@@ -128,18 +133,55 @@ namespace MathSeesaw
                 Destroy(c);
             go.name = "SkyBackdrop";
             go.transform.SetParent(m_cam.transform, false);
-
-            float dist = 45f;
-            float h = 2f * dist * Mathf.Tan(m_cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
-            float w = h * m_cam.aspect;
-            float side = Mathf.Max(h, w) * 1.08f;
-            go.transform.localPosition = new Vector3(0f, side * 0.12f, dist);
-            go.transform.localScale = new Vector3(side, side, 1f);
+            go.transform.localPosition = new Vector3(0f, 0f, 45f);
 
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             m_bgQuad = go.GetComponent<Renderer>();
             m_bgQuad.material = new Material(shader);
             m_bgQuad.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            UpdateBackgroundQuadLayout(true);
+        }
+
+        void UpdateBackgroundQuadLayout(bool force = false)
+        {
+            if (m_cam == null || m_bgQuad == null)
+                return;
+
+            float aspect = Mathf.Max(m_cam.aspect, 0.01f);
+            float orthographicSize = m_cam.orthographic ? m_cam.orthographicSize : -1f;
+            if (!force &&
+                Mathf.Approximately(aspect, m_lastBgAspect) &&
+                Mathf.Approximately(orthographicSize, m_lastBgOrthoSize))
+                return;
+
+            m_lastBgAspect = aspect;
+            m_lastBgOrthoSize = orthographicSize;
+
+            float height;
+            float width;
+            if (m_cam.orthographic)
+            {
+                height = m_cam.orthographicSize * 2f;
+                width = height * aspect;
+            }
+            else
+            {
+                const float dist = 45f;
+                height = 2f * dist * Mathf.Tan(m_cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                width = height * aspect;
+            }
+
+            float viewAspect = width / Mathf.Max(height, 0.01f);
+            float bgWidth = width;
+            float bgHeight = height;
+            if (m_bgTextureAspect > viewAspect)
+                bgWidth = bgHeight * m_bgTextureAspect;
+            else
+                bgHeight = bgWidth / Mathf.Max(m_bgTextureAspect, 0.01f);
+
+            const float bleed = 1.08f;
+            m_bgQuad.transform.localPosition = new Vector3(0f, height * 0.08f, 45f);
+            m_bgQuad.transform.localScale = new Vector3(bgWidth * bleed, bgHeight * bleed, 1f);
         }
 
         void BuildUI()
@@ -203,7 +245,11 @@ namespace MathSeesaw
                 var tex = Resources.Load<Texture2D>(skin.bgTexture);
                 m_bgQuad.gameObject.SetActive(tex != null);
                 if (tex != null)
+                {
                     m_bgQuad.material.SetTexture("_BaseMap", tex);
+                    m_bgTextureAspect = tex.width / (float)Mathf.Max(tex.height, 1);
+                    UpdateBackgroundQuadLayout(true);
+                }
             }
 
             if (m_light != null)

@@ -25,10 +25,14 @@ namespace MathSeesaw
         bool m_gameOver;
         GameObject m_previewGhost;
 
-        Vector3 m_singleCameraPos = new Vector3(0f, 3.4f, -9.5f);
-        Vector3 m_singleCameraRot = new Vector3(13f, 0f, 0f);
+        const float ReferencePortraitAspect = 2048f / 2732f;
+        const float BaseOrthographicSize = 6f;
+
+        Vector3 m_singleCameraPos = new Vector3(0f, 7f, -7f);
+        Vector3 m_singleCameraRot = new Vector3(30f, 0f, 0f);
         Vector3 m_doubleCameraPos = new Vector3(0f, 7f, -7f);
         Vector3 m_doubleCameraRot = new Vector3(30f, 0f, 0f);
+        float m_lastAspect = -1f;
 
         int m_moveCount;
         float m_startTime;
@@ -92,10 +96,27 @@ namespace MathSeesaw
                 cam.transform.position = m_doubleCameraPos;
                 cam.transform.rotation = Quaternion.Euler(m_doubleCameraRot);
             }
+            ApplyResponsiveCameraSize(true);
+        }
+
+        void ApplyResponsiveCameraSize(bool force = false)
+        {
+            if (cam == null || !cam.orthographic)
+                return;
+
+            float aspect = Mathf.Max(cam.aspect, 0.01f);
+            if (!force && Mathf.Approximately(aspect, m_lastAspect))
+                return;
+
+            m_lastAspect = aspect;
+            float widthFitScale = Mathf.Max(1f, ReferencePortraitAspect / aspect);
+            cam.orthographicSize = BaseOrthographicSize * widthFitScale;
         }
 
         void Update()
         {
+            ApplyResponsiveCameraSize();
+
             if (m_gameOver)
                 return;
 
