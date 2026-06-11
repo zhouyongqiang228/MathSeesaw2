@@ -31,7 +31,8 @@ namespace MathSeesaw
         [Header("Layout")]
         public float beamLength = 6.6f;
         public float panOffsetX = 2.5f;
-        public float manHeight = 1.05f;
+        public float manHeight = 1.16f;
+        public Vector3 manPickPadding = new Vector3(0.36f, 0.12f, 0.36f);
 
         static readonly Color SkyColor = new Color(0.4235f, 0.8392f, 0.9961f);
         static readonly Color IceColor = new Color(0.86f, 0.94f, 1f);
@@ -205,6 +206,7 @@ namespace MathSeesaw
                     continue;
 
                 man.CurPlace = null;
+                ApplyManInteractionSize(man);
                 man.Init(nums[i], false);
                 man.SaveInitState();
                 man.PlayIdle();
@@ -440,7 +442,6 @@ namespace MathSeesaw
             {
                 var go = Instantiate(prefab, root);
                 go.name = $"PutMan_{i}";
-                NormalizeSize(go.transform, manHeight, Axis.Y);
                 go.transform.position = new Vector3(x0 + i * spacing, -0.6f, -1.7f);
                 go.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
@@ -450,12 +451,7 @@ namespace MathSeesaw
                 var rend = man.avatarAnimator.MeshRenderer;
                 rend.material.color = ManColors[i % ManColors.Length];
 
-                var box = go.AddComponent<BoxCollider>();
-                var b = GetBounds(go.transform);
-                box.center = go.transform.InverseTransformPoint(b.center);
-                Vector3 size = go.transform.InverseTransformVector(b.size);
-                box.size = new Vector3(Mathf.Abs(size.x) + 0.25f, Mathf.Abs(size.y), Mathf.Abs(size.z) + 0.25f);
-                man.pickCollider = box;
+                ApplyManInteractionSize(man);
 
                 var holder = new GameObject("NumHolder");
                 holder.transform.SetParent(go.transform, false);
@@ -476,6 +472,38 @@ namespace MathSeesaw
 
             if (level.putMans.Count > 0)
                 putManTemplate = level.putMans[0].gameObject;
+        }
+
+        void ApplyManInteractionSize(PutMan man)
+        {
+            if (man == null)
+                return;
+
+            var b = GetManVisualBounds(man);
+            if (b.size.y > 0.0001f)
+                man.transform.localScale *= manHeight / b.size.y;
+
+            var box = man.pickCollider as BoxCollider;
+            if (box == null)
+                box = man.GetComponent<BoxCollider>();
+            if (box == null)
+                box = man.gameObject.AddComponent<BoxCollider>();
+
+            b = GetManVisualBounds(man);
+            box.center = man.transform.InverseTransformPoint(b.center);
+            Vector3 size = man.transform.InverseTransformVector(b.size);
+            box.size = new Vector3(
+                Mathf.Abs(size.x) + manPickPadding.x,
+                Mathf.Abs(size.y) + manPickPadding.y,
+                Mathf.Abs(size.z) + manPickPadding.z);
+            man.pickCollider = box;
+        }
+
+        static Bounds GetManVisualBounds(PutMan man)
+        {
+            if (man.avatarAnimator != null && man.avatarAnimator.MeshRenderer != null)
+                return man.avatarAnimator.MeshRenderer.bounds;
+            return GetBounds(man.transform);
         }
 
         GameObject CreatePart(PrimitiveType type, Transform parent, string name, Color color, Vector3 localPos, Vector3 localScale)

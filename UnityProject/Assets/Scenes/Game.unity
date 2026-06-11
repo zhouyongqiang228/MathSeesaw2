@@ -182,7 +182,8 @@ MonoBehaviour:
   buildMissingSceneObjects: 0
   beamLength: 6.6
   panOffsetX: 2.5
-  manHeight: 1.05
+  manHeight: 1.65
+  manPickPadding: {x: 0.36, y: 0.12, z: 0.36}
 --- !u!114 &100003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6112,8 +6113,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000004371139}
   m_LocalPosition: {x: 1.725, y: -0.6, z: -1.7}
-  m_LocalScale: {x: 0.5216106, y: 0.5216106, z: 0.5216106}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.76, y: 0.76, z: 0.76}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1013785788}
   - {fileID: 567924125}
@@ -9917,8 +9918,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000004371139}
   m_LocalPosition: {x: 0.57500005, y: -0.6, z: -1.7}
-  m_LocalScale: {x: 0.5216106, y: 0.5216106, z: 0.5216106}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.76, y: 0.76, z: 0.76}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1379262916}
   - {fileID: 1194058014}
@@ -13992,8 +13993,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000004371139}
   m_LocalPosition: {x: -0.5749999, y: -0.6, z: -1.7}
-  m_LocalScale: {x: 0.5216106, y: 0.5216106, z: 0.5216106}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.76, y: 0.76, z: 0.76}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1728803084}
   - {fileID: 262296925}
@@ -14339,8 +14340,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000004371139}
   m_LocalPosition: {x: -1.7249999, y: -0.6, z: -1.7}
-  m_LocalScale: {x: 0.5216106, y: 0.5216106, z: 0.5216106}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.76, y: 0.76, z: 0.76}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 139338294}
   - {fileID: 1664884575}
