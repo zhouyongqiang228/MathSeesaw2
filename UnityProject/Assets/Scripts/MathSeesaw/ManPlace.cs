@@ -35,7 +35,7 @@ namespace MathSeesaw
                 man.CurPlace.ClearMan();
             PuttedMan = man;
             man.CurPlace = this;
-            man.transform.SetParent(standPoint, true);
+            man.transform.SetParent(standPoint, false);
             man.transform.localPosition = Vector3.zero;
             man.transform.localRotation = Quaternion.identity;
             man.RefreshText();
