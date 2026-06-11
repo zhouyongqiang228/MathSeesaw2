@@ -49,3 +49,5 @@ UnityProject/ignore.conf
 
 # Tool-generated local memory accidentally placed under the project
 UnityProject/C:*
+
+/Projs/
