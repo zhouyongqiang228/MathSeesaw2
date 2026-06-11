@@ -99,7 +99,8 @@ namespace MathSeesaw
             var cam = go.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = SkyColor;
-            cam.fieldOfView = 50f;
+            cam.orthographic = true;
+            cam.orthographicSize = 6f;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 100f;
             go.transform.SetPositionAndRotation(new Vector3(0f, 3.4f, -9.5f), Quaternion.Euler(13f, 0f, 0f));
@@ -127,14 +128,14 @@ namespace MathSeesaw
             var root = new GameObject("Environment").transform;
 
             var stage = CreatePart(PrimitiveType.Cylinder, root, "Stage", IceColor,
-                new Vector3(0f, -1.35f, 0.8f), new Vector3(11.5f, 0.75f, 10f));
+                new Vector3(0f, -1.35f, 0.8f), new Vector3(11.5f, 0.75f, 16f));
             stage.GetComponent<Renderer>().material.SetFloat("_Smoothness", 0.25f);
 
             CreatePart(PrimitiveType.Cylinder, root, "StageBase", IceDarkColor,
-                new Vector3(0f, -2.3f, 0.8f), new Vector3(12.8f, 0.65f, 11.2f));
+                new Vector3(0f, -2.3f, 0.8f), new Vector3(12.8f, 0.65f, 17.92f));
 
             string[] cloudNames = { "Prefabs/Cloud_0", "Prefabs/Cloud_1", "Prefabs/Cloud_2" };
-            Vector3[] cloudPos = { new Vector3(-4.5f, 3.9f, 8f), new Vector3(4.5f, 4.8f, 10f), new Vector3(0f, 5.6f, 12.5f) };
+            Vector3[] cloudPos = { new Vector3(-5.4f, 4.6f, 15f), new Vector3(5.4f, 5.2f, 17f), new Vector3(0f, 6.2f, 19.5f) };
             var cloudMat = MakeLit(Color.white);
             cloudMat.SetFloat("_Smoothness", 0f);
             for (int i = 0; i < 3; i++)
@@ -142,7 +143,7 @@ namespace MathSeesaw
                 var prefab = Resources.Load<GameObject>(cloudNames[i]);
                 if (prefab == null) continue;
                 var cloud = Instantiate(prefab, root);
-                NormalizeSize(cloud.transform, 3.2f + i * 0.5f, Axis.X);
+                NormalizeSize(cloud.transform, 2.1f + i * 0.3f, Axis.X);
                 cloud.transform.position = cloudPos[i];
                 cloud.AddComponent<CloudDrift>().speed = 0.12f + i * 0.05f;
                 StripColliders(cloud);
