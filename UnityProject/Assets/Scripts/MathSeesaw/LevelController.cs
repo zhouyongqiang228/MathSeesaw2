@@ -28,12 +28,18 @@ namespace MathSeesaw
         Vector3 m_doubleCameraPos = new Vector3(0f, 7f, -7f);
         Vector3 m_doubleCameraRot = new Vector3(30f, 0f, 0f);
 
+        int m_moveCount;
+        float m_startTime;
+
         void Start()
         {
             foreach (var seesaw in seesaws)
                 seesaw.onRotateOver = CheckAndDealGameOver;
             UpdateScore(true);
             ApplyCameraSettings();
+
+            m_moveCount = 0;
+            m_startTime = Time.time;
         }
 
         public void SwitchSeesawMode(SeesawMode mode)
@@ -126,6 +132,12 @@ namespace MathSeesaw
             man.transform.localScale *= dragScale;
             m_dragPlane = new Plane(-cam.transform.forward, man.transform.position + Vector3.up * dragLift);
             m_dragTarget = man.transform.position;
+
+            // 播放拾取音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.PickupMan);
+            }
         }
 
         void DragMove(Vector2 screenPos)
@@ -158,6 +170,13 @@ namespace MathSeesaw
                 m_hoverPlace.SetHighlight(false);
                 m_hoverPlace.SetMan(man);
                 m_hoverPlace = null;
+                m_moveCount++;
+
+                // 播放放置音效
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySound(SoundType.PlaceMan);
+                }
             }
             else
             {
@@ -220,6 +239,13 @@ namespace MathSeesaw
                     return;
 
             m_gameOver = true;
+
+            // 播放平衡音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.SeesawBalance);
+            }
+
             foreach (var seesaw in seesaws)
             {
                 if (!seesaw.gameObject.activeSelf) continue;
@@ -228,6 +254,25 @@ namespace MathSeesaw
             }
             foreach (var man in putMans)
                 man.PlayVictory();
+
+            // 保存关卡进度
+            if (GameProgressManager.Instance != null)
+            {
+                int currentLevel = 1; // 需要从 GameBootstrap 获取
+                if (FindObjectOfType<GameBootstrap>() is GameBootstrap bootstrap)
+                {
+                    currentLevel = bootstrap.curLevel;
+                }
+                float completionTime = Time.time - m_startTime;
+                GameProgressManager.Instance.CompleteLevel(currentLevel, m_moveCount, completionTime);
+            }
+
+            // 播放胜利音效
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.Victory);
+            }
+
             if (ui != null)
                 ui.ShowWin();
         }

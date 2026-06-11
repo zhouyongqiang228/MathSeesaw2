@@ -34,7 +34,39 @@ namespace MathSeesaw
             BuildSeesawModeToggle(canvasGo.transform, currentMode);
             BuildProgressBar(canvasGo.transform, curLevel);
             BuildReplayButton(canvasGo.transform);
+            BuildMenuButton(canvasGo.transform);
             BuildWinPanel(canvasGo.transform);
+        }
+
+        void BuildMenuButton(Transform parent)
+        {
+            var btnImg = CreateImage(parent, "BtnMenu", new Color(0.95f, 0.5f, 0.15f));
+            var rt = btnImg.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(30f, -200f);
+            rt.sizeDelta = new Vector2(110f, 110f);
+            var btn = btnImg.gameObject.AddComponent<Button>();
+            btn.onClick.AddListener(GoToMainMenu);
+            var t = CreateText(btnImg.transform, "M", 56, Color.white);
+            Stretch(t.rectTransform);
+            t.fontStyle = FontStyle.Bold;
+        }
+
+        void GoToMainMenu()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.ButtonClick);
+            }
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.LoadMainMenu();
+            }
+            else
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+            }
         }
 
         void BuildSeesawModeToggle(Transform parent, SeesawMode currentMode)
@@ -147,22 +179,61 @@ namespace MathSeesaw
 
             var title = CreateText(overlay.transform, "LEVEL COMPLETE!", 90, Color.white);
             var trt = title.rectTransform;
-            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.62f);
+            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.7f);
             trt.sizeDelta = new Vector2(1000f, 160f);
             title.fontStyle = FontStyle.Bold;
 
-            var btnImg = CreateImage(overlay.transform, "BtnNext", HighlightColor);
-            var brt = btnImg.rectTransform;
-            brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 0.42f);
+            // 下一关按钮
+            var btnNextImg = CreateImage(overlay.transform, "BtnNext", HighlightColor);
+            var brt = btnNextImg.rectTransform;
+            brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 0.5f);
             brt.sizeDelta = new Vector2(440f, 130f);
-            var btn = btnImg.gameObject.AddComponent<Button>();
-            btn.onClick.AddListener(Replay);
-            var bt = CreateText(btnImg.transform, "PLAY AGAIN", 54, Color.white);
+            var btnNext = btnNextImg.gameObject.AddComponent<Button>();
+            btnNext.onClick.AddListener(NextLevel);
+            var bt = CreateText(btnNextImg.transform, "NEXT LEVEL", 54, Color.white);
             Stretch(bt.rectTransform);
             bt.fontStyle = FontStyle.Bold;
 
+            // 重玩按钮
+            var btnReplayImg = CreateImage(overlay.transform, "BtnReplay", new Color(0.55f, 0.4f, 0.95f));
+            var brt2 = btnReplayImg.rectTransform;
+            brt2.anchorMin = brt2.anchorMax = new Vector2(0.5f, 0.35f);
+            brt2.sizeDelta = new Vector2(440f, 130f);
+            var btnReplay = btnReplayImg.gameObject.AddComponent<Button>();
+            btnReplay.onClick.AddListener(Replay);
+            var bt2 = CreateText(btnReplayImg.transform, "REPLAY", 54, Color.white);
+            Stretch(bt2.rectTransform);
+            bt2.fontStyle = FontStyle.Bold;
+
+            // 主菜单按钮
+            var btnMenuImg = CreateImage(overlay.transform, "BtnMenu", new Color(0.7f, 0.7f, 0.7f));
+            var brt3 = btnMenuImg.rectTransform;
+            brt3.anchorMin = brt3.anchorMax = new Vector2(0.5f, 0.2f);
+            brt3.sizeDelta = new Vector2(440f, 130f);
+            var btnMenu = btnMenuImg.gameObject.AddComponent<Button>();
+            btnMenu.onClick.AddListener(GoToMainMenu);
+            var bt3 = CreateText(btnMenuImg.transform, "MAIN MENU", 54, Color.white);
+            Stretch(bt3.rectTransform);
+            bt3.fontStyle = FontStyle.Bold;
+
             m_winPanel = overlay.gameObject;
             m_winPanel.SetActive(false);
+        }
+
+        void NextLevel()
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.ButtonClick);
+            }
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.LoadNextLevel();
+            }
+            else
+            {
+                Replay();
+            }
         }
 
         public void ShowWin() => m_winPanel.SetActive(true);

@@ -13,6 +13,9 @@ namespace MathSeesaw
         [Header("Seesaw Mode")]
         public SeesawMode seesawMode = SeesawMode.Single;
 
+        [Header("Level Database")]
+        public LevelDatabase levelDatabase;
+
         [Header("Layout")]
         public float beamLength = 6.6f;
         public float panOffsetX = 2.5f;
@@ -42,6 +45,9 @@ namespace MathSeesaw
             m_baseLitMat = Resources.Load<Material>("Mats/mat_Seesaw");
             m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
+            // 加载关卡数据
+            LoadLevelData();
+
             var cam = BuildCamera();
             BuildLight();
             BuildEnvironment();
@@ -58,6 +64,32 @@ namespace MathSeesaw
                 level.SwitchSeesawMode(mode);
             });
             level.ui = ui;
+
+            // 播放游戏音乐
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayGameMusic();
+            }
+        }
+
+        void LoadLevelData()
+        {
+            // 从 GameProgressManager 获取当前关卡
+            if (GameProgressManager.Instance != null)
+            {
+                curLevel = GameProgressManager.Instance.CurrentLevel;
+            }
+
+            // 从 LevelDatabase 加载关卡配置
+            if (levelDatabase != null)
+            {
+                var levelData = levelDatabase.GetLevel(curLevel);
+                if (levelData != null)
+                {
+                    numbers = levelData.numbers;
+                    seesawMode = levelData.seesawMode;
+                }
+            }
         }
 
         Camera BuildCamera()
