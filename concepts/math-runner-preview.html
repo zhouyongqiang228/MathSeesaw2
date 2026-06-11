@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Math Runner Level Preview</title>
+  <style>
+    :root {
+      --sky1: #78d8ff;
+      --sky2: #ffe69a;
+      --grass: #43c26f;
+      --track: #7164f0;
+      --track2: #5a4bd1;
+      --ink: #17315c;
+      --cream: #fff8df;
+      --orange: #ff9f2e;
+      --pink: #ff5b8d;
+      --teal: #2dd5c4;
+      --red: #ff4f55;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #e8eef7;
+      font-family: "Arial Rounded MT Bold", "Nunito", "Arial", sans-serif;
+      color: var(--ink);
+    }
+
+    .board {
+      display: flex;
+      gap: 28px;
+      padding: 32px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phone {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      overflow: hidden;
+      border-radius: 34px;
+      background: linear-gradient(var(--sky1), var(--sky2) 58%, #88e390 58%);
+      box-shadow: 0 28px 70px rgba(22, 35, 83, 0.28);
+      border: 10px solid #111827;
+    }
+
+    .screen-title {
+      position: absolute;
+      top: 16px;
+      left: 22px;
+      right: 22px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 20;
+    }
+
+    .pill, .coin-pill {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 13px;
+      border-radius: 19px;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 0 5px 0 rgba(26, 54, 112, 0.12);
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .hearts {
+      display: flex;
+      gap: 5px;
+      color: var(--red);
+      font-size: 22px;
+      text-shadow: 0 2px 0 white;
+    }
+
+    .question {
+      position: absolute;
+      top: 86px;
+      left: 38px;
+      right: 38px;
+      height: 76px;
+      border-radius: 24px;
+      background: var(--cream);
+      border: 4px solid #fff;
+      box-shadow: 0 8px 0 rgba(26, 54, 112, 0.15);
+      display: grid;
+      place-items: center;
+      z-index: 18;
+      font-size: 36px;
+      font-weight: 1000;
+      letter-spacing: 0;
+    }
+
+    .world {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.86);
+      border-radius: 999px;
+      height: 24px;
+    }
+
+    .cloud::before, .cloud::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: inherit;
+    }
+
+    .cloud::before {
+      width: 38px;
+      height: 38px;
+      left: 20px;
+      top: -18px;
+    }
+
+    .cloud::after {
+      width: 50px;
+      height: 50px;
+      right: 18px;
+      top: -27px;
+    }
+
+    .track {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      bottom: -42px;
+      height: 610px;
+      background: linear-gradient(90deg, var(--track2), var(--track), var(--track2));
+      clip-path: polygon(35% 0, 65% 0, 100% 100%, 0 100%);
+      border-radius: 26px 26px 0 0;
+      box-shadow: inset 0 0 0 7px rgba(255, 255, 255, 0.28);
+    }
+
+    .lane {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.8) 28px, transparent 28px, transparent 52px);
+      opacity: 0.85;
+    }
+
+    .lane.left { left: 36.5%; transform: rotate(-8deg); }
+    .lane.right { right: 36.5%; transform: rotate(8deg); }
+
+    .gate {
+      position: absolute;
+      width: 82px;
+      height: 96px;
+      border-radius: 18px 18px 10px 10px;
+      background: #ffffff;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: 32px;
+      font-weight: 1000;
+      box-shadow: 0 8px 0 rgba(22, 35, 83, 0.18);
+      border: 5px solid #fff;
+      z-index: 8;
+    }
+
+    .gate.correct {
+      background: linear-gradient(#59f1ca, #17caa8);
+      color: white;
+      text-shadow: 0 3px 0 rgba(20, 95, 93, 0.35);
+    }
+
+    .gate.wrong {
+      background: linear-gradient(#fff, #f1f4ff);
+    }
+
+    .gate.small {
+      width: 74px;
+      height: 84px;
+      font-size: 26px;
+    }
+
+    .gate.lane-a { left: 74px; top: 270px; }
+    .gate.lane-b { left: 154px; top: 292px; }
+    .gate.lane-c { right: 74px; top: 270px; }
+    .gate.near-a { left: 52px; top: 505px; transform: scale(1.24); }
+    .gate.near-b { left: 154px; top: 536px; transform: scale(1.24); }
+    .gate.near-c { right: 52px; top: 505px; transform: scale(1.24); }
+
+    .obstacle {
+      position: absolute;
+      width: 74px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(#ff785f, #ec364c);
+      box-shadow: 0 7px 0 rgba(137, 31, 58, 0.32);
+      border: 4px solid rgba(255,255,255,0.7);
+      z-index: 7;
+    }
+
+    .barrier {
+      position: absolute;
+      width: 104px;
+      height: 18px;
+      border-radius: 10px;
+      background: repeating-linear-gradient(90deg, #fff 0 18px, #ffcf3a 18px 36px);
+      box-shadow: 0 5px 0 rgba(22, 35, 83, 0.18);
+      z-index: 7;
+    }
+
+    .coin {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 30%, #fff6a3 0 16%, #ffd13b 17% 68%, #e69715 70%);
+      box-shadow: 0 4px 0 rgba(159, 102, 0, 0.25);
+      z-index: 5;
+    }
+
+    .runner {
+      position: absolute;
+      left: 164px;
+      bottom: 116px;
+      width: 70px;
+      height: 92px;
+      z-index: 12;
+    }
+
+    .runner .head {
+      position: absolute;
+      left: 17px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #ffd6a5;
+      border: 4px solid #9c5b35;
+    }
+
+    .runner .body {
+      position: absolute;
+      top: 36px;
+      left: 14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 18px 18px 14px 14px;
+      background: linear-gradient(#ff7db1, #ef3d7b);
+      border: 4px solid white;
+    }
+
+    .runner .leg {
+      position: absolute;
+      top: 74px;
+      width: 16px;
+      height: 30px;
+      border-radius: 10px;
+      background: #2748d8;
+    }
+
+    .runner .leg.one { left: 16px; transform: rotate(14deg); }
+    .runner .leg.two { right: 16px; transform: rotate(-18deg); }
+
+    .shadow {
+      position: absolute;
+      left: 151px;
+      bottom: 98px;
+      width: 96px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(26, 38, 88, 0.22);
+      z-index: 4;
+    }
+
+    .progress {
+      position: absolute;
+      left: 58px;
+      right: 58px;
+      top: 172px;
+      height: 15px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.55);
+      overflow: hidden;
+      z-index: 17;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffcb3d, #ff7c3d);
+    }
+
+    .target-bubble {
+      position: absolute;
+      top: 206px;
+      left: 84px;
+      right: 84px;
+      height: 56px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.88);
+      display: grid;
+      place-items: center;
+      font-weight: 1000;
+      font-size: 22px;
+      box-shadow: 0 6px 0 rgba(26, 54, 112, 0.12);
+      z-index: 14;
+    }
+
+    .value-badge {
+      position: absolute;
+      left: 145px;
+      bottom: 230px;
+      width: 110px;
+      height: 54px;
+      border-radius: 18px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 25px;
+      font-weight: 1000;
+      box-shadow: 0 8px 0 rgba(26, 54, 112, 0.15);
+      z-index: 15;
+    }
+
+    .finish {
+      position: absolute;
+      left: 105px;
+      right: 105px;
+      top: 272px;
+      height: 30px;
+      background: repeating-linear-gradient(90deg, #111827 0 16px, #fff 16px 32px);
+      border-radius: 8px;
+      box-shadow: 0 5px 0 rgba(26,54,112,.18);
+      z-index: 9;
+    }
+
+    .complete-panel {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      top: 135px;
+      height: 485px;
+      border-radius: 30px;
+      background: rgba(255,248,223,0.96);
+      border: 6px solid #fff;
+      box-shadow: 0 14px 0 rgba(26,54,112,.16);
+      z-index: 30;
+      text-align: center;
+      padding: 28px 22px;
+    }
+
+    .complete-panel h1 {
+      margin: 4px 0 10px;
+      font-size: 38px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .stars {
+      font-size: 52px;
+      color: #ffbe24;
+      text-shadow: 0 4px 0 #d67700;
+      margin: 18px 0;
+    }
+
+    .stats {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 48px;
+      border-radius: 16px;
+      padding: 0 16px;
+      background: white;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .round-button {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      color: white;
+      font-weight: 1000;
+      box-shadow: 0 7px 0 rgba(26,54,112,.22);
+    }
+
+    .round-button.orange { background: var(--orange); }
+    .round-button.teal { background: var(--teal); }
+    .round-button.pink { background: var(--pink); }
+
+    .caption {
+      position: absolute;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255,255,255,0.95);
+      font-size: 18px;
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(26,54,112,.25);
+      z-index: 25;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <section class="phone" id="preview-1">
+      <div class="world">
+        <div class="cloud" style="left:35px; top:210px; width:90px;"></div>
+        <div class="cloud" style="right:28px; top:245px; width:108px;"></div>
+        <div class="track">
+          <div class="lane left"></div>
+          <div class="lane right"></div>
+        </div>
+        <div class="gate wrong lane-a">10</div>
+        <div class="gate correct lane-b">12</div>
+        <div class="gate wrong lane-c">14</div>
+        <div class="obstacle" style="left:72px; top:430px;"></div>
+        <div class="barrier" style="right:54px; top:470px; transform: rotate(8deg);"></div>
+        <div class="coin" style="left:184px; top:420px;"></div>
+        <div class="coin" style="left:177px; top:466px;"></div>
+        <div class="coin" style="left:170px; top:512px;"></div>
+        <div class="shadow"></div>
+        <div class="runner"><div class="head"></div><div class="body"></div><div class="leg one"></div><div class="leg two"></div></div>
+      </div>
+      <div class="screen-title"><div class="pill">Level 8</div><div class="hearts">♥♥♥</div><div class="coin-pill">● 128</div></div>
+      <div class="question">7 + 5 = ?</div>
+      <div class="progress"><span style="width:58%"></span></div>
+      <div class="caption">答案门 + 三道跑酷</div>
+    </section>
+
+    <section class="phone" id="preview-2">
+      <div class="world">
+        <div class="cloud" style="left:42px; top:218px; width:104px;"></div>
+        <div class="cloud" style="right:42px; top:274px; width:86px;"></div>
+        <div class="track">
+          <div class="lane left"></div>
+          <div class="lane right"></div>
+        </div>
+        <div class="target-bubble">终点目标：20</div>
+        <div class="finish"></div>
+        <div class="gate small wrong lane-a">+4</div>
+        <div class="gate small correct lane-b">×2</div>
+        <div class="gate small wrong lane-c">-3</div>
+        <div class="gate wrong near-a">+5</div>
+        <div class="gate correct near-b">×2</div>
+        <div class="gate wrong near-c">÷2</div>
+        <div class="coin" style="left:92px; top:404px;"></div>
+        <div class="coin" style="right:94px; top:442px;"></div>
+        <div class="obstacle" style="left:154px; top:396px; width:88px;"></div>
+        <div class="value-badge">当前：10</div>
+        <div class="shadow"></div>
+        <div class="runner" style="left:160px;"><div class="head"></div><div class="body" style="background:linear-gradient(#7ee7ff,#3389ff);"></div><div class="leg one"></div><div class="leg two"></div></div>
+      </div>
+      <div class="screen-title"><div class="pill">Level 17</div><div class="hearts">♥♥</div><div class="coin-pill">● 246</div></div>
+      <div class="question">选运算门</div>
+      <div class="progress"><span style="width:76%"></span></div>
+      <div class="caption">当前数值 + 运算选择</div>
+    </section>
+
+    <section class="phone" id="preview-3">
+      <div class="world">
+        <div class="cloud" style="left:32px; top:205px; width:112px;"></div>
+        <div class="cloud" style="right:40px; top:262px; width:96px;"></div>
+        <div class="track">
+          <div class="lane left"></div>
+          <div class="lane right"></div>
+        </div>
+        <div class="finish" style="top:650px; transform:scale(1.55);"></div>
+        <div class="coin" style="left:122px; top:568px;"></div>
+        <div class="coin" style="left:181px; top:544px;"></div>
+        <div class="coin" style="right:118px; top:568px;"></div>
+        <div class="shadow"></div>
+        <div class="runner" style="bottom:154px;"><div class="head"></div><div class="body" style="background:linear-gradient(#a783ff,#6b4cff);"></div><div class="leg one"></div><div class="leg two"></div></div>
+      </div>
+      <div class="screen-title"><div class="pill">Level 8</div><div class="hearts">♥♥♥</div><div class="coin-pill">● 174</div></div>
+      <div class="complete-panel">
+        <h1>过关！</h1>
+        <div class="stars">★★★</div>
+        <div class="stats">
+          <div class="stat"><span>答对</span><strong>8 / 8</strong></div>
+          <div class="stat"><span>金币</span><strong>46 / 50</strong></div>
+          <div class="stat"><span>用时</span><strong>00:42</strong></div>
+        </div>
+        <div class="button-row">
+          <div class="round-button orange">↻</div>
+          <div class="round-button teal">▶</div>
+          <div class="round-button pink">⌂</div>
+        </div>
+      </div>
+      <div class="caption">关卡制结算 + 三星重玩</div>
+    </section>
+  </main>
+</body>
+</html>

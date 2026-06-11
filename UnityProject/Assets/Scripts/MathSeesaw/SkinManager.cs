@@ -7,6 +7,11 @@ namespace MathSeesaw
     public class SkinManager : MonoBehaviour
     {
         const string PrefKey = "ms2_skin";
+        const float BackgroundDistance = 45f;
+
+        [Header("Scene Background")]
+        public Transform backgroundRoot;
+        public Renderer backgroundQuad;
 
         struct Skin
         {
@@ -71,7 +76,6 @@ namespace MathSeesaw
         Renderer m_base;
         Renderer[] m_trays;
         CloudDrift[] m_clouds;
-        Renderer m_bgQuad;
         Text m_skinLabel;
         int m_index;
         float m_bgTextureAspect = 1f;
@@ -91,6 +95,7 @@ namespace MathSeesaw
         void Start()
         {
             m_cam = Camera.main;
+            BindBackgroundReferences();
             m_light = FindFirstObjectByType<Light>();
             m_stage = FindRenderer("Stage");
             m_stageBase = FindRenderer("StageBase");
@@ -104,7 +109,7 @@ namespace MathSeesaw
                     trays.Add(r);
             m_trays = trays.ToArray();
 
-            BuildBackgroundQuad();
+            EnsureBackgroundQuad();
             BuildUI();
 
             m_index = Mathf.Clamp(PlayerPrefs.GetInt(PrefKey, 0), 0, Skins.Length - 1);
@@ -126,25 +131,43 @@ namespace MathSeesaw
             return go != null ? go.GetComponent<Renderer>() : null;
         }
 
-        void BuildBackgroundQuad()
+        void BindBackgroundReferences()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            foreach (var c in go.GetComponents<Collider>())
-                Destroy(c);
-            go.name = "SkyBackdrop";
-            go.transform.SetParent(m_cam.transform, false);
-            go.transform.localPosition = new Vector3(0f, 0f, 45f);
+            if (backgroundRoot == null)
+            {
+                var root = GameObject.Find("Scene Background");
+                if (root != null)
+                    backgroundRoot = root.transform;
+            }
 
-            var shader = Shader.Find("Universal Render Pipeline/Unlit");
-            m_bgQuad = go.GetComponent<Renderer>();
-            m_bgQuad.material = new Material(shader);
-            m_bgQuad.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (backgroundQuad == null && backgroundRoot != null)
+                backgroundQuad = backgroundRoot.GetComponentInChildren<Renderer>(true);
+        }
+
+        void EnsureBackgroundQuad()
+        {
+            if (backgroundRoot == null)
+                backgroundRoot = new GameObject("Scene Background").transform;
+
+            if (backgroundQuad == null)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                foreach (var c in go.GetComponents<Collider>())
+                    Destroy(c);
+                go.name = "SkyBackdrop";
+                go.transform.SetParent(backgroundRoot, false);
+
+                var shader = Shader.Find("Universal Render Pipeline/Unlit");
+                backgroundQuad = go.GetComponent<Renderer>();
+                backgroundQuad.material = new Material(shader);
+                backgroundQuad.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
             UpdateBackgroundQuadLayout(true);
         }
 
         void UpdateBackgroundQuadLayout(bool force = false)
         {
-            if (m_cam == null || m_bgQuad == null)
+            if (m_cam == null || backgroundQuad == null)
                 return;
 
             float aspect = Mathf.Max(m_cam.aspect, 0.01f);
@@ -166,8 +189,7 @@ namespace MathSeesaw
             }
             else
             {
-                const float dist = 45f;
-                height = 2f * dist * Mathf.Tan(m_cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                height = 2f * BackgroundDistance * Mathf.Tan(m_cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
                 width = height * aspect;
             }
 
@@ -180,8 +202,10 @@ namespace MathSeesaw
                 bgHeight = bgWidth / Mathf.Max(m_bgTextureAspect, 0.01f);
 
             const float bleed = 1.08f;
-            m_bgQuad.transform.localPosition = new Vector3(0f, height * 0.08f, 45f);
-            m_bgQuad.transform.localScale = new Vector3(bgWidth * bleed, bgHeight * bleed, 1f);
+            var bgTransform = backgroundQuad.transform;
+            bgTransform.position = m_cam.transform.TransformPoint(new Vector3(0f, height * 0.08f, BackgroundDistance));
+            bgTransform.rotation = m_cam.transform.rotation;
+            bgTransform.localScale = new Vector3(bgWidth * bleed, bgHeight * bleed, 1f);
         }
 
         void BuildUI()
@@ -238,15 +262,15 @@ namespace MathSeesaw
             m_cam.backgroundColor = skin.sky;
             if (string.IsNullOrEmpty(skin.bgTexture))
             {
-                m_bgQuad.gameObject.SetActive(false);
+                backgroundQuad.gameObject.SetActive(false);
             }
             else
             {
                 var tex = Resources.Load<Texture2D>(skin.bgTexture);
-                m_bgQuad.gameObject.SetActive(tex != null);
+                backgroundQuad.gameObject.SetActive(tex != null);
                 if (tex != null)
                 {
-                    m_bgQuad.material.SetTexture("_BaseMap", tex);
+                    backgroundQuad.material.SetTexture("_BaseMap", tex);
                     m_bgTextureAspect = tex.width / (float)Mathf.Max(tex.height, 1);
                     UpdateBackgroundQuadLayout(true);
                 }

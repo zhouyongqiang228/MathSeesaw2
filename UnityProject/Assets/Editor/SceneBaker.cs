@@ -20,10 +20,12 @@ public static class SceneBaker
 
         EnsureRootComponent<LevelController>(bootstrap.gameObject, c => bootstrap.levelController = c);
         EnsureRootComponent<GameUI>(bootstrap.gameObject, c => bootstrap.gameUI = c);
+        EnsureRootComponent<SkinManager>(bootstrap.gameObject, c => { });
 
         DeleteIfExists("Main Camera");
         DeleteIfExists("Directional Light");
         DeleteIfExists("Environment");
+        DeleteIfExists("Scene Background");
         DeleteIfExists("Seesaw_0");
         DeleteIfExists("Seesaw_1");
         DeleteIfExists("putMans");
@@ -32,6 +34,7 @@ public static class SceneBaker
 
         bootstrap.buildMissingSceneObjects = false;
         bootstrap.BuildEditableScene();
+        BuildSceneBackground(bootstrap);
 
         EditorUtility.SetDirty(bootstrap);
         EditorSceneManager.MarkSceneDirty(scene);
@@ -65,5 +68,30 @@ public static class SceneBaker
         var child = parent.Find(name);
         if (child != null)
             Object.DestroyImmediate(child.gameObject);
+    }
+
+    static void BuildSceneBackground(GameBootstrap bootstrap)
+    {
+        var backgroundRoot = new GameObject("Scene Background").transform;
+        var backdrop = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        backdrop.name = "SkyBackdrop";
+        backdrop.transform.SetParent(backgroundRoot, false);
+        foreach (var collider in backdrop.GetComponents<Collider>())
+            Object.DestroyImmediate(collider);
+
+        var renderer = backdrop.GetComponent<Renderer>();
+        var shader = Shader.Find("Universal Render Pipeline/Unlit");
+        if (shader != null)
+            renderer.sharedMaterial = new Material(shader) { name = "SkyBackdrop_Mat" };
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        var skinManager = bootstrap.GetComponent<SkinManager>();
+        if (skinManager != null)
+        {
+            skinManager.backgroundRoot = backgroundRoot;
+            skinManager.backgroundQuad = renderer;
+            EditorUtility.SetDirty(skinManager);
+        }
     }
 }
