@@ -16,6 +16,18 @@ namespace MathSeesaw
         [Header("Level Database")]
         public LevelDatabase levelDatabase;
 
+        [Header("Scene References")]
+        public Camera sceneCamera;
+        public Light directionalLight;
+        public Transform environmentRoot;
+        public Transform putMansRoot;
+        public LevelController levelController;
+        public GameUI gameUI;
+        public GameObject putManTemplate;
+
+        [Header("Runtime Fallback")]
+        public bool buildMissingSceneObjects = true;
+
         [Header("Layout")]
         public float beamLength = 6.6f;
         public float panOffsetX = 2.5f;
@@ -42,45 +54,57 @@ namespace MathSeesaw
 
         void Awake()
         {
-            m_baseLitMat = Resources.Load<Material>("Mats/mat_Seesaw");
-            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-            // 加载关卡数据
+            CacheAssets();
             LoadLevelData();
 
-            var cam = BuildCamera();
-            BuildLight();
-            BuildEnvironment();
+            if (!BindSceneReferences() && buildMissingSceneObjects)
+                BuildEditableScene();
 
-            var level = gameObject.AddComponent<LevelController>();
-            level.cam = cam;
-            level.seesawMode = seesawMode;
-            BuildSeesaws(level);
-            BuildPutMans(level);
+            ConfigureLevelController();
+            ConfigurePutMans();
+            ConfigureUI();
 
-            var ui = gameObject.AddComponent<GameUI>();
-            ui.Build(curLevel, seesawMode, (SeesawMode mode) => {
-                seesawMode = mode;
-                level.SwitchSeesawMode(mode);
-            });
-            level.ui = ui;
-
-            // 播放游戏音乐
             if (AudioManager.Instance != null)
-            {
                 AudioManager.Instance.PlayGameMusic();
-            }
+        }
+
+        public void BuildEditableScene()
+        {
+            CacheAssets();
+            sceneCamera = BuildCamera();
+            directionalLight = BuildLight();
+            environmentRoot = BuildEnvironment();
+
+            levelController = GetComponent<LevelController>();
+            if (levelController == null)
+                levelController = gameObject.AddComponent<LevelController>();
+            levelController.cam = sceneCamera;
+            levelController.seesawMode = seesawMode;
+            levelController.seesaws.Clear();
+            levelController.putMans.Clear();
+            BuildSeesaws(levelController);
+            BuildPutMans(levelController);
+
+            gameUI = GetComponent<GameUI>();
+            if (gameUI == null)
+                gameUI = gameObject.AddComponent<GameUI>();
+            gameUI.Build(curLevel, seesawMode, OnSeesawModeChanged);
+            levelController.ui = gameUI;
+        }
+
+        void CacheAssets()
+        {
+            if (m_baseLitMat == null)
+                m_baseLitMat = Resources.Load<Material>("Mats/mat_Seesaw");
+            if (m_font == null)
+                m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         void LoadLevelData()
         {
-            // 从 GameProgressManager 获取当前关卡
             if (GameProgressManager.Instance != null)
-            {
                 curLevel = GameProgressManager.Instance.CurrentLevel;
-            }
 
-            // 从 LevelDatabase 加载关卡配置
             if (levelDatabase != null)
             {
                 var levelData = levelDatabase.GetLevel(curLevel);
@@ -90,6 +114,123 @@ namespace MathSeesaw
                     seesawMode = levelData.seesawMode;
                 }
             }
+        }
+
+        bool BindSceneReferences()
+        {
+            if (sceneCamera == null)
+                sceneCamera = Camera.main;
+            if (directionalLight == null)
+                directionalLight = FindObjectOfType<Light>();
+            if (environmentRoot == null)
+            {
+                var environment = GameObject.Find("Environment");
+                if (environment != null)
+                    environmentRoot = environment.transform;
+            }
+            if (putMansRoot == null)
+            {
+                var root = GameObject.Find("putMans");
+                if (root != null)
+                    putMansRoot = root.transform;
+            }
+            if (levelController == null)
+                levelController = GetComponent<LevelController>();
+            if (gameUI == null)
+                gameUI = GetComponent<GameUI>();
+
+            return sceneCamera != null && levelController != null && levelController.seesaws.Count > 0 && putMansRoot != null;
+        }
+
+        void ConfigureLevelController()
+        {
+            if (levelController == null)
+                levelController = gameObject.AddComponent<LevelController>();
+            if (sceneCamera == null)
+                sceneCamera = Camera.main;
+
+            levelController.cam = sceneCamera;
+            levelController.seesawMode = seesawMode;
+
+            if (levelController.seesaws.Count == 0)
+                levelController.seesaws.AddRange(FindObjectsOfType<Blance>());
+            levelController.seesaws.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+            levelController.SwitchSeesawMode(seesawMode);
+        }
+
+        void ConfigurePutMans()
+        {
+            if (levelController == null)
+                return;
+
+            levelController.putMans.Clear();
+            if (putMansRoot == null)
+            {
+                var root = GameObject.Find("putMans");
+                if (root != null)
+                    putMansRoot = root.transform;
+            }
+
+            var sceneMans = putMansRoot != null
+                ? new List<PutMan>(putMansRoot.GetComponentsInChildren<PutMan>(true))
+                : new List<PutMan>();
+            sceneMans.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+            if (putManTemplate == null && sceneMans.Count > 0)
+                putManTemplate = sceneMans[0].gameObject;
+
+            while (sceneMans.Count < numbers.Length && putManTemplate != null)
+            {
+                var clone = Instantiate(putManTemplate, putMansRoot);
+                clone.name = $"PutMan_{sceneMans.Count}";
+                clone.SetActive(true);
+                var man = clone.GetComponent<PutMan>();
+                sceneMans.Add(man);
+            }
+
+            var nums = new List<int>(numbers);
+            for (int i = 0; i < nums.Count; i++)
+            {
+                int j = Random.Range(i, nums.Count);
+                (nums[i], nums[j]) = (nums[j], nums[i]);
+            }
+
+            for (int i = 0; i < sceneMans.Count; i++)
+            {
+                var man = sceneMans[i];
+                bool active = i < nums.Count;
+                man.gameObject.SetActive(active);
+                if (!active)
+                    continue;
+
+                man.CurPlace = null;
+                man.Init(nums[i], false);
+                man.SaveInitState();
+                man.PlayIdle();
+                if (man.avatarAnimator != null && man.avatarAnimator.Animator != null)
+                    man.avatarAnimator.Animator.Play("idle", 0, Random.value);
+                levelController.putMans.Add(man);
+            }
+        }
+
+        void ConfigureUI()
+        {
+            if (gameUI == null)
+                gameUI = GetComponent<GameUI>();
+            if (gameUI == null)
+                gameUI = gameObject.AddComponent<GameUI>();
+
+            gameUI.Initialize(curLevel, seesawMode, OnSeesawModeChanged);
+            if (levelController != null)
+                levelController.ui = gameUI;
+        }
+
+        void OnSeesawModeChanged(SeesawMode mode)
+        {
+            seesawMode = mode;
+            if (levelController != null)
+                levelController.SwitchSeesawMode(mode);
         }
 
         Camera BuildCamera()
@@ -108,7 +249,7 @@ namespace MathSeesaw
             return cam;
         }
 
-        void BuildLight()
+        Light BuildLight()
         {
             var go = new GameObject("Directional Light");
             var light = go.AddComponent<Light>();
@@ -121,9 +262,10 @@ namespace MathSeesaw
 
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.55f, 0.6f, 0.66f);
+            return light;
         }
 
-        void BuildEnvironment()
+        Transform BuildEnvironment()
         {
             var root = new GameObject("Environment").transform;
 
@@ -150,25 +292,23 @@ namespace MathSeesaw
                 foreach (var r in cloud.GetComponentsInChildren<Renderer>())
                     r.sharedMaterial = cloudMat;
             }
+            return root;
         }
 
         void BuildSeesaws(LevelController level)
         {
-            // Always create both seesaws, but activate based on mode
-            var seesaw1 = BuildSeesaw(new Vector3(0f, 0f, 1.2f), 0);   // Front seesaw (original position)
-            var seesaw2 = BuildSeesaw(new Vector3(0f, 0f, 6.5f), 1);   // Back seesaw (far back)
+            var seesaw1 = BuildSeesaw(new Vector3(0f, 0f, 1.2f), 0);
+            var seesaw2 = BuildSeesaw(new Vector3(0f, 0f, 6.5f), 1);
             level.seesaws.Add(seesaw1);
             level.seesaws.Add(seesaw2);
 
-            // Set initial visibility based on mode
             if (seesawMode == SeesawMode.Single)
             {
-                seesaw1.transform.position = new Vector3(0f, -0.6f, 1.2f); // Center position for single mode
+                seesaw1.transform.position = new Vector3(0f, -0.6f, 1.2f);
                 seesaw2.gameObject.SetActive(false);
             }
             else
             {
-                // Both active in double mode, positions already set
                 seesaw1.gameObject.SetActive(true);
                 seesaw2.gameObject.SetActive(true);
             }
@@ -225,7 +365,7 @@ namespace MathSeesaw
                 b = GetBounds(beam.transform);
                 return b.max.y - up.position.y;
             }
-            var cube = CreatePart(PrimitiveType.Cube, up, "Beam", PanColor,
+            CreatePart(PrimitiveType.Cube, up, "Beam", PanColor,
                 Vector3.zero, new Vector3(beamLength, 0.25f, 0.7f));
             return 0.125f;
         }
@@ -290,15 +430,9 @@ namespace MathSeesaw
         {
             var prefab = Resources.Load<GameObject>("Prefabs/SeesawAvatar");
             var root = new GameObject("putMans").transform;
+            putMansRoot = root;
 
-            var nums = new List<int>(numbers);
-            for (int i = 0; i < nums.Count; i++)
-            {
-                int j = Random.Range(i, nums.Count);
-                (nums[i], nums[j]) = (nums[j], nums[i]);
-            }
-
-            int count = nums.Count;
+            int count = numbers.Length;
             float spacing = 1.15f;
             float x0 = -(count - 1) * spacing * 0.5f;
 
@@ -331,13 +465,17 @@ namespace MathSeesaw
                 man.textNum = CreateTextMesh(holder.transform, "0", 0.42f, Color.white);
                 man.textNum.transform.localPosition = new Vector3(0f, 0f, -0.28f);
 
-                man.Init(nums[i], false);
+                man.Init(numbers[i], false);
                 man.SaveInitState();
                 man.PlayIdle();
-                man.avatarAnimator.Animator.Play("idle", 0, Random.value);
+                if (man.avatarAnimator != null && man.avatarAnimator.Animator != null)
+                    man.avatarAnimator.Animator.Play("idle", 0, Random.value);
 
                 level.putMans.Add(man);
             }
+
+            if (level.putMans.Count > 0)
+                putManTemplate = level.putMans[0].gameObject;
         }
 
         GameObject CreatePart(PrimitiveType type, Transform parent, string name, Color color, Vector3 localPos, Vector3 localScale)
@@ -404,7 +542,15 @@ namespace MathSeesaw
         static void StripColliders(GameObject go)
         {
             foreach (var c in go.GetComponentsInChildren<Collider>())
-                Destroy(c);
+                DestroyUnityObject(c);
+        }
+
+        static void DestroyUnityObject(Object obj)
+        {
+            if (Application.isPlaying)
+                Destroy(obj);
+            else
+                DestroyImmediate(obj);
         }
 
         static Mesh BuildPrismMesh(float width, float height, float depth)

@@ -14,6 +14,24 @@ namespace MathSeesaw
         GameObject m_winPanel;
         Action<SeesawMode> m_onModeChanged;
 
+        public void Initialize(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
+        {
+            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            m_onModeChanged = onModeChanged;
+
+            var canvas = transform.Find("Canvas_Battle");
+            if (canvas == null)
+            {
+                Build(curLevel, currentMode, onModeChanged);
+                return;
+            }
+
+            BindSeesawModeToggle(canvas, currentMode);
+            BindButton(canvas, "BtnReplay", Replay);
+            BindButton(canvas, "BtnMenu", GoToMainMenu);
+            BindWinPanel(canvas);
+        }
+
         public void Build(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
         {
             m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -36,6 +54,47 @@ namespace MathSeesaw
             BuildReplayButton(canvasGo.transform);
             BuildMenuButton(canvasGo.transform);
             BuildWinPanel(canvasGo.transform);
+        }
+
+        void BindSeesawModeToggle(Transform canvas, SeesawMode currentMode)
+        {
+            var container = canvas.Find("SeesawModeToggle");
+            if (container == null)
+                return;
+
+            var btn1Img = container.Find("Btn1")?.GetComponent<Image>();
+            var btn2Img = container.Find("Btn2")?.GetComponent<Image>();
+            var btn1 = btn1Img != null ? btn1Img.GetComponent<Button>() : null;
+            var btn2 = btn2Img != null ? btn2Img.GetComponent<Button>() : null;
+            if (btn1Img == null || btn2Img == null || btn1 == null || btn2 == null)
+                return;
+
+            btn1.onClick.RemoveAllListeners();
+            btn2.onClick.RemoveAllListeners();
+            btn1.onClick.AddListener(() => SwitchMode(SeesawMode.Single, btn1Img, btn1));
+            btn2.onClick.AddListener(() => SwitchMode(SeesawMode.Double, btn2Img, btn2));
+            SetModeVisual(container, currentMode);
+        }
+
+        void BindButton(Transform canvas, string name, UnityEngine.Events.UnityAction action)
+        {
+            var button = canvas.Find(name)?.GetComponent<Button>();
+            if (button == null)
+                return;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(action);
+        }
+
+        void BindWinPanel(Transform canvas)
+        {
+            m_winPanel = canvas.Find("WinPanel")?.gameObject;
+            if (m_winPanel == null)
+                return;
+
+            BindButton(m_winPanel.transform, "BtnNext", NextLevel);
+            BindButton(m_winPanel.transform, "BtnReplay", Replay);
+            BindButton(m_winPanel.transform, "BtnMenu", GoToMainMenu);
+            m_winPanel.SetActive(false);
         }
 
         void BuildMenuButton(Transform parent)
@@ -112,8 +171,11 @@ namespace MathSeesaw
         {
             m_onModeChanged?.Invoke(mode);
 
-            // Update all buttons visual state
-            var container = btnImg.transform.parent;
+            SetModeVisual(btnImg.transform.parent, mode);
+        }
+
+        void SetModeVisual(Transform container, SeesawMode mode)
+        {
             var btn1Img = container.Find("Btn1").GetComponent<Image>();
             var btn2Img = container.Find("Btn2").GetComponent<Image>();
             var btn1Text = btn1Img.transform.GetChild(0).GetComponent<Text>();

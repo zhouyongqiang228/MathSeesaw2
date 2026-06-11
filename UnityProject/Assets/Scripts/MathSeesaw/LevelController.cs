@@ -32,6 +32,7 @@ namespace MathSeesaw
         Vector3 m_singleCameraRot = new Vector3(30f, 0f, 0f);
         Vector3 m_doubleCameraPos = new Vector3(0f, 7f, -7f);
         Vector3 m_doubleCameraRot = new Vector3(30f, 0f, 0f);
+        readonly List<Vector3> m_initialSeesawPositions = new List<Vector3>();
         float m_lastAspect = -1f;
 
         int m_moveCount;
@@ -39,6 +40,7 @@ namespace MathSeesaw
 
         void Start()
         {
+            CacheSeesawPositions();
             foreach (var seesaw in seesaws)
                 seesaw.onRotateOver = CheckAndDealGameOver;
             UpdateScore(true);
@@ -52,6 +54,7 @@ namespace MathSeesaw
         {
             seesawMode = mode;
             ApplyCameraSettings();
+            CacheSeesawPositions();
 
             // Show/hide seesaws based on mode
             if (mode == SeesawMode.Single)
@@ -59,7 +62,7 @@ namespace MathSeesaw
                 if (seesaws.Count > 0)
                 {
                     seesaws[0].gameObject.SetActive(true);
-                    seesaws[0].transform.position = new Vector3(0f, -0.6f, 1.2f); // Center position
+                    seesaws[0].transform.position = m_initialSeesawPositions[0];
                 }
                 if (seesaws.Count > 1)
                 {
@@ -71,17 +74,23 @@ namespace MathSeesaw
                 if (seesaws.Count > 0)
                 {
                     seesaws[0].gameObject.SetActive(true);
-                    seesaws[0].transform.position = new Vector3(0f, -0.6f, 1.2f); // Front position (original)
+                    seesaws[0].transform.position = m_initialSeesawPositions[0];
                 }
                 if (seesaws.Count > 1)
                 {
                     seesaws[1].gameObject.SetActive(true);
-                    seesaws[1].transform.position = new Vector3(0f, -0.6f, 6.5f); // Back position (far back)
+                    seesaws[1].transform.position = m_initialSeesawPositions[1];
                 }
             }
 
             // Update scores after switching
             UpdateScore(true);
+        }
+
+        void CacheSeesawPositions()
+        {
+            while (m_initialSeesawPositions.Count < seesaws.Count)
+                m_initialSeesawPositions.Add(seesaws[m_initialSeesawPositions.Count].transform.position);
         }
 
         void ApplyCameraSettings()
