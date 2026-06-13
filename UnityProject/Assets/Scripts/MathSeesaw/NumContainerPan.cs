@@ -8,7 +8,6 @@ namespace MathSeesaw
         public int initScore;
         public TextMesh textTotal;
         public List<ManPlace> places = new List<ManPlace>();
-        public float seatSpacing = 0.6f;
 
         public int TotalScore { get; private set; }
 
@@ -59,7 +58,6 @@ namespace MathSeesaw
         public void ApplySeatCount(int seatCount)
         {
             int clamped = Mathf.Clamp(seatCount, 0, places.Count);
-            float startX = -(clamped - 1) * seatSpacing * 0.5f;
 
             for (int i = 0; i < places.Count; i++)
             {
@@ -69,17 +67,6 @@ namespace MathSeesaw
 
                 bool available = i < clamped;
                 place.SetRuntimeAvailable(available);
-                if (!available)
-                    continue;
-
-                float x = startX + i * seatSpacing;
-                if (place.seatRenderer != null)
-                {
-                    place.seatRenderer.transform.localPosition = new Vector3(x, 0.12f, 0f);
-                    place.seatRenderer.transform.localScale = new Vector3(0.5f, 0.055f, 0.5f);
-                }
-                if (place.standPoint != null)
-                    place.standPoint.localPosition = new Vector3(x, 0.17f, 0f);
             }
         }
     }

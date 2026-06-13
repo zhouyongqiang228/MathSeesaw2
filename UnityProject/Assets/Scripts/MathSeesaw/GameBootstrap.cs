@@ -442,11 +442,11 @@ namespace MathSeesaw
             var pan = panGo.AddComponent<NumContainerPan>();
 
             int maxSeats = Mathf.Max(defaultLeftSeatCount, defaultRightSeatCount, 1);
-            pan.seatSpacing = 0.6f;
-            float startX = -(maxSeats - 1) * pan.seatSpacing * 0.5f;
+            const float seatSpacing = 0.6f;
+            float startX = -(maxSeats - 1) * seatSpacing * 0.5f;
             for (int i = 0; i < maxSeats; i++)
             {
-                float x = startX + i * pan.seatSpacing;
+                float x = startX + i * seatSpacing;
                 var seat = CreatePart(PrimitiveType.Cylinder, panGo.transform, "Seat", SeatColor,
                     new Vector3(x, 0.12f, 0f), new Vector3(0.5f, 0.055f, 0.5f));
                 var stand = new GameObject("StandPoint").transform;
