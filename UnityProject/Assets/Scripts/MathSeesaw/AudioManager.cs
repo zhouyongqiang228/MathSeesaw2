@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace MathSeesaw
 {
@@ -28,21 +27,6 @@ namespace MathSeesaw
         [SerializeField] AudioSource m_musicSource;
         [SerializeField] AudioSource m_soundSource;
 
-        [Header("Music Clips")]
-        [SerializeField] AudioClip m_menuMusic;
-        [SerializeField] AudioClip m_gameMusic;
-
-        [Header("Sound Clips")]
-        [SerializeField] AudioClip m_buttonClickSound;
-        [SerializeField] AudioClip m_pickupSound;
-        [SerializeField] AudioClip m_placeSound;
-        [SerializeField] AudioClip m_balanceSound;
-        [SerializeField] AudioClip m_completeSound;
-        [SerializeField] AudioClip m_victorySound;
-        [SerializeField] AudioClip m_unlockSound;
-
-        Dictionary<SoundType, AudioClip> m_soundClips;
-
         void Awake()
         {
             if (Instance != null)
@@ -68,7 +52,6 @@ namespace MathSeesaw
                 m_soundSource.playOnAwake = false;
             }
 
-            InitializeSoundDictionary();
             UpdateVolumes();
         }
 
@@ -80,34 +63,22 @@ namespace MathSeesaw
             }
         }
 
-        void InitializeSoundDictionary()
-        {
-            m_soundClips = new Dictionary<SoundType, AudioClip>
-            {
-                { SoundType.ButtonClick, m_buttonClickSound },
-                { SoundType.PickupMan, m_pickupSound },
-                { SoundType.PlaceMan, m_placeSound },
-                { SoundType.SeesawBalance, m_balanceSound },
-                { SoundType.LevelComplete, m_completeSound },
-                { SoundType.Victory, m_victorySound },
-                { SoundType.Unlock, m_unlockSound }
-            };
-        }
-
         public void PlayMenuMusic()
         {
-            if (m_menuMusic != null && m_musicSource.clip != m_menuMusic)
+            var menuMusic = SeesawResourcesManager.Instance != null ? SeesawResourcesManager.Instance.MenuMusic : null;
+            if (menuMusic != null && m_musicSource.clip != menuMusic)
             {
-                m_musicSource.clip = m_menuMusic;
+                m_musicSource.clip = menuMusic;
                 m_musicSource.Play();
             }
         }
 
         public void PlayGameMusic()
         {
-            if (m_gameMusic != null && m_musicSource.clip != m_gameMusic)
+            var gameMusic = SeesawResourcesManager.Instance != null ? SeesawResourcesManager.Instance.GameMusic : null;
+            if (gameMusic != null && m_musicSource.clip != gameMusic)
             {
-                m_musicSource.clip = m_gameMusic;
+                m_musicSource.clip = gameMusic;
                 m_musicSource.Play();
             }
         }
@@ -117,10 +88,30 @@ namespace MathSeesaw
             if (GameProgressManager.Instance != null && !GameProgressManager.Instance.SoundEnabled)
                 return;
 
-            if (m_soundClips.TryGetValue(soundType, out AudioClip clip) && clip != null)
+            var clip = GetSoundClip(soundType);
+            if (clip != null)
             {
                 m_soundSource.PlayOneShot(clip);
             }
+        }
+
+        AudioClip GetSoundClip(SoundType soundType)
+        {
+            var resources = SeesawResourcesManager.Instance;
+            if (resources == null)
+                return null;
+
+            return soundType switch
+            {
+                SoundType.ButtonClick => resources.ButtonClickSound,
+                SoundType.PickupMan => resources.PickupSound,
+                SoundType.PlaceMan => resources.PlaceSound,
+                SoundType.SeesawBalance => resources.BalanceSound,
+                SoundType.LevelComplete => resources.CompleteSound,
+                SoundType.Victory => resources.VictorySound,
+                SoundType.Unlock => resources.UnlockSound,
+                _ => null
+            };
         }
 
         public void PlaySound(AudioClip clip)

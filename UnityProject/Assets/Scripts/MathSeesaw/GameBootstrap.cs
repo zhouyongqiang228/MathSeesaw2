@@ -111,10 +111,22 @@ namespace MathSeesaw
 
         void CacheAssets()
         {
+            var resources = SeesawResourcesManager.Instance;
+            if (resources == null)
+            {
+                Debug.LogError("SeesawResourcesManager is missing from the scene.");
+                return;
+            }
+
             if (m_baseLitMat == null)
-                m_baseLitMat = Resources.Load<Material>("Mats/mat_Seesaw");
+                m_baseLitMat = resources.SeesawMaterial;
             if (m_font == null)
-                m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                m_font = resources.Font;
+
+            if (m_baseLitMat == null)
+                Debug.LogError("SeesawResourcesManager is missing the seesaw material reference.");
+            if (m_font == null)
+                Debug.LogError("SeesawResourcesManager is missing the font reference.");
         }
 
         void LoadLevelData()
@@ -625,6 +637,9 @@ namespace MathSeesaw
 
         Material MakeLit(Color color)
         {
+            if (m_baseLitMat == null)
+                return new Material(Shader.Find("Universal Render Pipeline/Lit"));
+
             var mat = new Material(m_baseLitMat.shader);
             mat.SetColor("_BaseColor", color);
             mat.SetFloat("_Smoothness", 0.15f);

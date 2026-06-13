@@ -17,7 +17,7 @@ namespace MathSeesaw
 
         void Start()
         {
-            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            m_font = SeesawResourcesManager.GetFont();
             BuildMainMenu();
         }
 

@@ -19,13 +19,15 @@ namespace MathSeesaw
         public float dragScale = 1.12f;
         [Range(1, 2)] public int activeSeesawCount = 1;
 
-        [Header("Camera Framing")]
+        [Header("Camera Settings")]
         public Vector3 singleCameraPosition = new Vector3(0f, 7f, -7f);
         public Vector3 singleCameraRotation = new Vector3(30f, 0f, 0f);
+        public float singleCameraSize = 6f;
         public Vector3 doubleCameraPosition = new Vector3(0f, 7.5f, -9f);
         public Vector3 doubleCameraRotation = new Vector3(34f, 0f, 0f);
-        public float singleCameraSize = 6f;
         public float doubleCameraSize = 7.2f;
+
+        [Header("Camera Framing")]
         public bool frameActiveSeesaws = true;
         public float cameraFramePadding = 1.35f;
 

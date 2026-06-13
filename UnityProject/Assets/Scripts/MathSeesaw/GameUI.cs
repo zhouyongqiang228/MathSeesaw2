@@ -19,7 +19,7 @@ namespace MathSeesaw
 
         public void Initialize(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
         {
-            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            m_font = SeesawResourcesManager.GetFont();
             m_onModeChanged = onModeChanged;
 
             var canvas = transform.Find("Canvas_Battle");
@@ -38,7 +38,7 @@ namespace MathSeesaw
 
         public void Build(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
         {
-            m_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            m_font = SeesawResourcesManager.GetFont();
             m_onModeChanged = onModeChanged;
 
             var canvasGo = new GameObject("Canvas_Battle", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));

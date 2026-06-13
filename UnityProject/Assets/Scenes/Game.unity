@@ -226,14 +226,14 @@ MonoBehaviour:
   dragLift: 0.45
   dragScale: 1.12
   activeSeesawCount: 1
-  singleCameraPosition: {x: 0, y: 7, z: -7}
-  singleCameraRotation: {x: 30, y: 0, z: 0}
+  singleCameraPosition: {x: 0, y: 3.4, z: -9.5}
+  singleCameraRotation: {x: 20, y: 0, z: 0}
+  singleCameraSize: 6
   doubleCameraPosition: {x: 0, y: 7.5, z: -9}
   doubleCameraRotation: {x: 34, y: 0, z: 0}
-  singleCameraSize: 6
   doubleCameraSize: 7.2
-  frameActiveSeesaws: 1
-  cameraFramePadding: 1.35
+  frameActiveSeesaws: 0
+  cameraFramePadding: 1
 --- !u!114 &100005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7343,6 +7343,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 786298498}
+  - component: {fileID: 786298499}
   m_Layer: 0
   m_Name: SeesawResourcesManager
   m_TagString: Untagged
@@ -7365,6 +7366,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &786298499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 786298497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c4cc4a4c47e4b118e9f2a3d9d149120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MathSeesaw.SeesawResourcesManager
+  m_Font: {fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}
+  m_SeesawMaterial: {fileID: 2100000, guid: bf2716e93b42b4d2f871778304236363, type: 2}
+  m_MenuMusic: {fileID: 0}
+  m_GameMusic: {fileID: 0}
+  m_ButtonClickSound: {fileID: 0}
+  m_PickupSound: {fileID: 0}
+  m_PlaceSound: {fileID: 0}
+  m_BalanceSound: {fileID: 0}
+  m_CompleteSound: {fileID: 0}
+  m_VictorySound: {fileID: 0}
+  m_UnlockSound: {fileID: 0}
 --- !u!21 &786525124
 Material:
   serializedVersion: 8

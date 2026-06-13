@@ -168,11 +168,10 @@ namespace MathSeesaw
             rt.sizeDelta = new Vector2(230f, 110f);
             btnGo.GetComponent<Button>().onClick.AddListener(Next);
 
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var textGo = new GameObject("Label", typeof(Text));
             textGo.transform.SetParent(btnGo.transform, false);
             m_skinLabel = textGo.GetComponent<Text>();
-            m_skinLabel.font = font;
+            m_skinLabel.font = SeesawResourcesManager.GetFont();
             m_skinLabel.fontSize = 40;
             m_skinLabel.fontStyle = FontStyle.Bold;
             m_skinLabel.color = Color.white;
