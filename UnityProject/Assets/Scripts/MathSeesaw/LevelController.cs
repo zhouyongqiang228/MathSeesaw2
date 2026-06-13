@@ -28,6 +28,8 @@ namespace MathSeesaw
         public float doubleCameraSize = 7.2f;
 
         [Header("Camera Framing")]
+        public float designWidth = 2048f;
+        public float designHeight = 2732f;
         public bool frameActiveSeesaws = true;
         public float cameraFramePadding = 1.35f;
 
@@ -38,7 +40,6 @@ namespace MathSeesaw
         bool m_gameOver;
         GameObject m_previewGhost;
 
-        const float ReferencePortraitAspect = 2048f / 2732f;
         float m_baseOrthographicSize = 6f;
         readonly List<Vector3> m_initialSeesawPositions = new List<Vector3>();
         float m_lastAspect = -1f;
@@ -161,7 +162,8 @@ namespace MathSeesaw
                 return;
 
             m_lastAspect = aspect;
-            float widthFitScale = Mathf.Max(1f, ReferencePortraitAspect / aspect);
+            float designAspect = Mathf.Max(0.01f, designWidth) / Mathf.Max(0.01f, designHeight);
+            float widthFitScale = Mathf.Max(1f, designAspect / aspect);
             cam.orthographicSize = m_baseOrthographicSize * widthFitScale;
         }
 

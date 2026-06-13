@@ -228,10 +228,12 @@ MonoBehaviour:
   activeSeesawCount: 1
   singleCameraPosition: {x: 0, y: 3.4, z: -9.5}
   singleCameraRotation: {x: 20, y: 0, z: 0}
-  singleCameraSize: 6
+  singleCameraSize: 9
   doubleCameraPosition: {x: 0, y: 7.5, z: -9}
   doubleCameraRotation: {x: 34, y: 0, z: 0}
   doubleCameraSize: 7.2
+  designWidth: 1284
+  designHeight: 2778
   frameActiveSeesaws: 0
   cameraFramePadding: 1
 --- !u!114 &100005
@@ -4690,7 +4692,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &484145776
 Transform:
   m_ObjectHideFlags: 0
@@ -6915,7 +6917,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &689698480
 Transform:
   m_ObjectHideFlags: 0
@@ -8333,7 +8335,7 @@ Camera:
   far clip plane: 100
   field of view: 60
   orthographic: 1
-  orthographic size: 6
+  orthographic size: 9
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -10807,7 +10809,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1176020879
 Transform:
   m_ObjectHideFlags: 0
@@ -11539,7 +11541,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1223851913
 Transform:
   m_ObjectHideFlags: 0
@@ -16236,7 +16238,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1809118986
 Transform:
   m_ObjectHideFlags: 0
@@ -19086,7 +19088,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2080371882
 Transform:
   m_ObjectHideFlags: 0
