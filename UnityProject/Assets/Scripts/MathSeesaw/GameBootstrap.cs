@@ -39,6 +39,8 @@ namespace MathSeesaw
         static readonly Color IceDarkColor = new Color(0.62f, 0.78f, 0.92f);
         static readonly Color PanColor = new Color(0.72f, 0.42f, 0.92f);
         static readonly Color SeatColor = new Color(0.88f, 0.66f, 1f);
+        static readonly Color GrassColor = new Color(0.4f, 0.76f, 0.36f);
+        static readonly Color RockColor = new Color(0.48f, 0.5f, 0.54f);
 
         static readonly Color[] ManColors =
         {
@@ -63,6 +65,7 @@ namespace MathSeesaw
 
             ConfigureLevelController();
             ConfigurePutMans();
+            ApplyRuntimeVisualAdjustments();
             ConfigureUI();
 
             if (AudioManager.Instance != null)
@@ -206,6 +209,7 @@ namespace MathSeesaw
                     continue;
 
                 man.CurPlace = null;
+                EnsureGroundSeat(man);
                 ApplyManInteractionSize(man);
                 man.Init(nums[i], false);
                 man.SaveInitState();
@@ -278,6 +282,8 @@ namespace MathSeesaw
             CreatePart(PrimitiveType.Cylinder, root, "StageBase", IceDarkColor,
                 new Vector3(0f, -2.3f, 0.8f), new Vector3(12.8f, 0.65f, 17.92f));
 
+            BuildSmallDecorations(root);
+
             string[] cloudNames = { "Prefabs/Cloud_0", "Prefabs/Cloud_1", "Prefabs/Cloud_2" };
             Vector3[] cloudPos = { new Vector3(-5.4f, 4.6f, 15f), new Vector3(5.4f, 5.2f, 17f), new Vector3(0f, 6.2f, 19.5f) };
             var cloudMat = MakeLit(Color.white);
@@ -295,6 +301,43 @@ namespace MathSeesaw
                     r.sharedMaterial = cloudMat;
             }
             return root;
+        }
+
+        void BuildSmallDecorations(Transform root)
+        {
+            Vector3[] grassPositions =
+            {
+                new Vector3(-4.8f, -0.92f, -1.1f),
+                new Vector3(4.9f, -0.92f, -0.8f),
+                new Vector3(-5.2f, -0.9f, 4.1f),
+                new Vector3(5.1f, -0.9f, 4.4f),
+            };
+            foreach (var pos in grassPositions)
+            {
+                var tuft = new GameObject("GrassTuft").transform;
+                tuft.SetParent(root, false);
+                tuft.localPosition = pos;
+                CreatePart(PrimitiveType.Cylinder, tuft, "GrassStem", GrassColor,
+                    new Vector3(-0.08f, 0.18f, 0f), new Vector3(0.055f, 0.36f, 0.055f));
+                CreatePart(PrimitiveType.Cylinder, tuft, "GrassStem", GrassColor,
+                    new Vector3(0.08f, 0.15f, 0.04f), new Vector3(0.05f, 0.3f, 0.05f));
+                CreatePart(PrimitiveType.Cylinder, tuft, "GrassStem", GrassColor,
+                    new Vector3(0f, 0.2f, -0.06f), new Vector3(0.05f, 0.4f, 0.05f));
+            }
+
+            Vector3[] rockPositions =
+            {
+                new Vector3(-4.1f, -0.95f, 1.5f),
+                new Vector3(4.25f, -0.96f, 1.8f),
+                new Vector3(-3.9f, -0.94f, 6.2f),
+                new Vector3(4.0f, -0.95f, 6.4f),
+            };
+            for (int i = 0; i < rockPositions.Length; i++)
+            {
+                var rock = CreatePart(PrimitiveType.Sphere, root, "Rock", RockColor,
+                    rockPositions[i], new Vector3(0.46f + i % 2 * 0.08f, 0.22f, 0.34f));
+                rock.transform.localRotation = Quaternion.Euler(0f, i * 27f, 0f);
+            }
         }
 
         void BuildSeesaws(LevelController level)
@@ -379,21 +422,14 @@ namespace MathSeesaw
             panGo.transform.localPosition = localPos;
             var pan = panGo.AddComponent<NumContainerPan>();
 
-            CreatePart(PrimitiveType.Cube, panGo.transform, "Tray", PanColor,
-                new Vector3(0f, 0.09f, 0f), new Vector3(2.5f, 0.18f, 1.05f));
-            CreatePart(PrimitiveType.Cube, panGo.transform, "TrayLipL", PanColor,
-                new Vector3(-1.3f, 0.26f, 0f), new Vector3(0.12f, 0.36f, 1.05f));
-            CreatePart(PrimitiveType.Cube, panGo.transform, "TrayLipR", PanColor,
-                new Vector3(1.3f, 0.26f, 0f), new Vector3(0.12f, 0.36f, 1.05f));
-
             float[] xs = { -0.9f, -0.3f, 0.3f, 0.9f };
             foreach (float x in xs)
             {
                 var seat = CreatePart(PrimitiveType.Cylinder, panGo.transform, "Seat", SeatColor,
-                    new Vector3(x, 0.22f, 0f), new Vector3(0.5f, 0.045f, 0.5f));
+                    new Vector3(x, 0.12f, 0f), new Vector3(0.5f, 0.055f, 0.5f));
                 var stand = new GameObject("StandPoint").transform;
                 stand.SetParent(panGo.transform, false);
-                stand.localPosition = new Vector3(x, 0.24f, 0f);
+                stand.localPosition = new Vector3(x, 0.17f, 0f);
 
                 var place = panGo.AddComponent<ManPlace>();
                 place.container = pan;
@@ -411,7 +447,7 @@ namespace MathSeesaw
         {
             var holder = new GameObject("ScoreBubble");
             holder.transform.SetParent(pan, false);
-            holder.transform.localPosition = new Vector3(0f, 1.75f, 0f);
+            holder.transform.localPosition = new Vector3(0f, -0.55f, 0f);
             holder.AddComponent<FaceCamera>();
 
             var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -447,6 +483,7 @@ namespace MathSeesaw
 
                 var man = go.AddComponent<PutMan>();
                 man.avatarAnimator = go.GetComponent<SeesawAvatarAnimator>();
+                EnsureGroundSeat(man);
 
                 var rend = man.avatarAnimator.MeshRenderer;
                 rend.material.color = ManColors[i % ManColors.Length];
@@ -497,6 +534,77 @@ namespace MathSeesaw
                 Mathf.Abs(size.y) + manPickPadding.y,
                 Mathf.Abs(size.z) + manPickPadding.z);
             man.pickCollider = box;
+        }
+
+        void ApplyRuntimeVisualAdjustments()
+        {
+            if (levelController != null)
+            {
+                foreach (var seesaw in levelController.seesaws)
+                {
+                    if (seesaw == null)
+                        continue;
+                    AdjustPanVisuals(seesaw.leftPan);
+                    AdjustPanVisuals(seesaw.rightPan);
+                }
+            }
+
+            if (putMansRoot != null)
+            {
+                foreach (var man in putMansRoot.GetComponentsInChildren<PutMan>(true))
+                    EnsureGroundSeat(man);
+            }
+        }
+
+        void AdjustPanVisuals(NumContainerPan pan)
+        {
+            if (pan == null)
+                return;
+
+            var staleParts = new List<GameObject>();
+            foreach (Transform child in pan.transform)
+                if (child.name.StartsWith("Tray"))
+                    staleParts.Add(child.gameObject);
+            foreach (var part in staleParts)
+                DestroyUnityObject(part);
+
+            float[] xs = { -0.9f, -0.3f, 0.3f, 0.9f };
+            for (int i = 0; i < pan.places.Count; i++)
+            {
+                var place = pan.places[i];
+                float x = xs[Mathf.Min(i, xs.Length - 1)];
+                if (place.seatRenderer != null)
+                {
+                    place.seatRenderer.transform.localPosition = new Vector3(x, 0.12f, 0f);
+                    place.seatRenderer.transform.localScale = new Vector3(0.5f, 0.055f, 0.5f);
+                }
+                if (place.standPoint != null)
+                    place.standPoint.localPosition = new Vector3(x, 0.17f, 0f);
+            }
+
+            if (pan.textTotal != null)
+            {
+                var holder = pan.textTotal.transform.parent;
+                if (holder != null)
+                    holder.localPosition = new Vector3(0f, -0.55f, 0f);
+            }
+        }
+
+        void EnsureGroundSeat(PutMan man)
+        {
+            if (man == null)
+                return;
+
+            var existing = man.transform.Find("GroundSeat");
+            if (existing != null)
+            {
+                man.groundSeat = existing;
+                return;
+            }
+
+            var seat = CreatePart(PrimitiveType.Cylinder, man.transform, "GroundSeat", SeatColor,
+                new Vector3(0f, 0.03f, 0f), new Vector3(0.5f, 0.055f, 0.5f));
+            man.groundSeat = seat.transform;
         }
 
         static Bounds GetManVisualBounds(PutMan man)

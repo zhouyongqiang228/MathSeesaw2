@@ -38,6 +38,7 @@ namespace MathSeesaw
             man.transform.SetParent(standPoint, false);
             man.transform.localPosition = Vector3.zero;
             man.transform.localRotation = Quaternion.identity;
+            man.SetGroundSeatVisible(false);
             man.RefreshText();
             return true;
         }
@@ -47,6 +48,7 @@ namespace MathSeesaw
             if (PuttedMan != null)
             {
                 PuttedMan.CurPlace = null;
+                PuttedMan.SetGroundSeatVisible(true);
                 PuttedMan.RefreshText();
                 PuttedMan = null;
             }
@@ -59,8 +61,8 @@ namespace MathSeesaw
         public void SetHighlight(bool on)
         {
             CacheVisual();
-            seatRenderer.material.color = on ? Color.Lerp(m_baseColor, Color.white, 0.65f) : m_baseColor;
-            seatRenderer.transform.localScale = on ? m_baseScale * 1.25f : m_baseScale;
+            seatRenderer.material.color = on ? Color.Lerp(m_baseColor, Color.white, 0.18f) : m_baseColor;
+            seatRenderer.transform.localScale = on ? m_baseScale * 1.06f : m_baseScale;
         }
     }
 }

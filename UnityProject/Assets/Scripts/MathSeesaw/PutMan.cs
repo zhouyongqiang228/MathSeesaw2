@@ -11,6 +11,7 @@ namespace MathSeesaw
         public SeesawAvatarAnimator avatarAnimator;
         public TextMesh textNum;
         public Collider pickCollider;
+        public Transform groundSeat;
 
         Vector3 m_initPos;
         Quaternion m_initRot;
@@ -59,9 +60,18 @@ namespace MathSeesaw
         {
             transform.SetParent(m_initParent, true);
             transform.SetPositionAndRotation(m_initPos, m_initRot);
+            SetGroundSeatVisible(true);
         }
 
         public void PlayIdle() => avatarAnimator.PlayIdle();
         public void PlayVictory() => avatarAnimator.PlayVictory();
+
+        public void SetGroundSeatVisible(bool visible)
+        {
+            if (groundSeat == null)
+                groundSeat = transform.Find("GroundSeat");
+            if (groundSeat != null)
+                groundSeat.gameObject.SetActive(visible);
+        }
     }
 }

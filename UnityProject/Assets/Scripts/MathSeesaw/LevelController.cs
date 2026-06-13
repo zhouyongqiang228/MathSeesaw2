@@ -37,6 +37,7 @@ namespace MathSeesaw
 
         int m_moveCount;
         float m_startTime;
+        float m_lastHoverHapticTime = -1f;
 
         void Start()
         {
@@ -185,6 +186,7 @@ namespace MathSeesaw
                 man.CurPlace.ClearMan();
                 UpdateScore();
             }
+            man.SetGroundSeatVisible(false);
             man.transform.SetParent(null, true);
             man.transform.localScale *= dragScale;
             m_dragPlane = new Plane(-cam.transform.forward, man.transform.position + Vector3.up * dragLift);
@@ -228,8 +230,11 @@ namespace MathSeesaw
                 if (m_hoverPlace != null)
                 {
                     m_hoverPlace.SetHighlight(true);
-                    if (HapticManager.Instance != null)
+                    if (HapticManager.Instance != null && Time.unscaledTime - m_lastHoverHapticTime > 0.18f)
+                    {
                         HapticManager.Instance.Selection();
+                        m_lastHoverHapticTime = Time.unscaledTime;
+                    }
                 }
             }
 
@@ -333,7 +338,7 @@ namespace MathSeesaw
                 // 播放触觉反馈
                 if (HapticManager.Instance != null)
                 {
-                    HapticManager.Instance.MediumImpact();
+                    HapticManager.Instance.LightImpact();
                 }
             }
             else

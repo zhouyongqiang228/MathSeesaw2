@@ -12,7 +12,10 @@ namespace MathSeesaw
 
         Font m_font;
         GameObject m_winPanel;
+        Text m_fpsText;
         Action<SeesawMode> m_onModeChanged;
+        float m_fpsTimer;
+        int m_fpsFrames;
 
         public void Initialize(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
         {
@@ -30,6 +33,7 @@ namespace MathSeesaw
             BindButton(canvas, "BtnReplay", Replay);
             BindButton(canvas, "BtnMenu", GoToMainMenu);
             BindWinPanel(canvas);
+            BindOrBuildFps(canvas);
         }
 
         public void Build(int curLevel, SeesawMode currentMode, Action<SeesawMode> onModeChanged)
@@ -53,7 +57,24 @@ namespace MathSeesaw
             BuildProgressBar(canvasGo.transform, curLevel);
             BuildReplayButton(canvasGo.transform);
             BuildMenuButton(canvasGo.transform);
+            BuildFpsCounter(canvasGo.transform);
             BuildWinPanel(canvasGo.transform);
+        }
+
+        void Update()
+        {
+            if (m_fpsText == null)
+                return;
+
+            m_fpsFrames++;
+            m_fpsTimer += Time.unscaledDeltaTime;
+            if (m_fpsTimer < 0.35f)
+                return;
+
+            float fps = m_fpsFrames / Mathf.Max(m_fpsTimer, 0.0001f);
+            m_fpsText.text = $"FPS {Mathf.RoundToInt(fps)}";
+            m_fpsFrames = 0;
+            m_fpsTimer = 0f;
         }
 
         void BindSeesawModeToggle(Transform canvas, SeesawMode currentMode)
@@ -95,6 +116,28 @@ namespace MathSeesaw
             BindButton(m_winPanel.transform, "BtnReplay", Replay);
             BindButton(m_winPanel.transform, "BtnMenu", GoToMainMenu);
             m_winPanel.SetActive(false);
+        }
+
+        void BindOrBuildFps(Transform canvas)
+        {
+            m_fpsText = canvas.Find("FpsCounter")?.GetComponent<Text>();
+            if (m_fpsText == null)
+                BuildFpsCounter(canvas);
+        }
+
+        void BuildFpsCounter(Transform parent)
+        {
+            var t = CreateText(parent, "FPS --", 30, new Color(0.12f, 0.16f, 0.2f));
+            t.name = "FpsCounter";
+            t.alignment = TextAnchor.MiddleRight;
+            t.fontStyle = FontStyle.Bold;
+
+            var rt = t.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-160f, -82f);
+            rt.sizeDelta = new Vector2(180f, 48f);
+            m_fpsText = t;
         }
 
         void BuildMenuButton(Transform parent)

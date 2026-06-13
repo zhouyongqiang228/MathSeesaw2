@@ -7,20 +7,18 @@ namespace MathSeesaw
     public class SkinManager : MonoBehaviour
     {
         const string PrefKey = "ms2_skin";
-        const float BackgroundDistance = 45f;
 
         [Header("Scene Background")]
         public Transform backgroundRoot;
-        public Renderer backgroundQuad;
 
         struct Skin
         {
             public string name;
-            public string bgTexture;
             public Color sky;
             public Color stage;
             public Color stageBase;
             public Color seesaw;
+            public Color seat;
             public Color pan;
             public Color light;
             public float lightIntensity;
@@ -30,42 +28,42 @@ namespace MathSeesaw
 
         static readonly Skin[] Skins =
         {
-            new Skin { name = "经典晴空", bgTexture = null,
+            new Skin { name = "经典晴空",
                 sky = new Color(0.4235f, 0.8392f, 0.9961f),
                 stage = new Color(0.86f, 0.94f, 1f), stageBase = new Color(0.62f, 0.78f, 0.92f),
-                seesaw = new Color(0.78f, 0.42f, 0.95f), pan = new Color(0.72f, 0.42f, 0.92f),
+                seesaw = new Color(0.78f, 0.42f, 0.95f), seat = new Color(0.88f, 0.66f, 1f), pan = new Color(0.72f, 0.42f, 0.92f),
                 light = Color.white, lightIntensity = 1.15f,
                 ambient = new Color(0.55f, 0.6f, 0.66f), showClouds = true },
-            new Skin { name = "极光冰原", bgTexture = "Backgrounds/bg_aurora",
+            new Skin { name = "极光冰原",
                 sky = new Color(0.18f, 0.16f, 0.42f),
                 stage = new Color(0.85f, 0.92f, 1f), stageBase = new Color(0.55f, 0.68f, 0.95f),
-                seesaw = new Color(0.55f, 0.38f, 0.98f), pan = new Color(0.45f, 0.5f, 0.98f),
+                seesaw = new Color(0.55f, 0.38f, 0.98f), seat = new Color(0.62f, 0.82f, 1f), pan = new Color(0.45f, 0.5f, 0.98f),
                 light = new Color(0.82f, 0.88f, 1f), lightIntensity = 1.05f,
-                ambient = new Color(0.42f, 0.46f, 0.62f), showClouds = false },
-            new Skin { name = "沙漠绿洲", bgTexture = "Backgrounds/bg_desert",
+                ambient = new Color(0.42f, 0.46f, 0.62f), showClouds = true },
+            new Skin { name = "沙漠绿洲",
                 sky = new Color(0.35f, 0.72f, 0.98f),
                 stage = new Color(0.97f, 0.88f, 0.62f), stageBase = new Color(0.85f, 0.64f, 0.42f),
-                seesaw = new Color(1f, 0.55f, 0.2f), pan = new Color(0.95f, 0.45f, 0.25f),
+                seesaw = new Color(1f, 0.55f, 0.2f), seat = new Color(1f, 0.78f, 0.36f), pan = new Color(0.95f, 0.45f, 0.25f),
                 light = new Color(1f, 0.96f, 0.86f), lightIntensity = 1.25f,
-                ambient = new Color(0.62f, 0.58f, 0.5f), showClouds = false },
-            new Skin { name = "森林河流", bgTexture = "Backgrounds/bg_forest",
+                ambient = new Color(0.62f, 0.58f, 0.5f), showClouds = true },
+            new Skin { name = "森林河流",
                 sky = new Color(0.3f, 0.7f, 0.95f),
                 stage = new Color(0.62f, 0.85f, 0.5f), stageBase = new Color(0.45f, 0.42f, 0.38f),
-                seesaw = new Color(1f, 0.5f, 0.3f), pan = new Color(0.95f, 0.42f, 0.32f),
+                seesaw = new Color(1f, 0.5f, 0.3f), seat = new Color(0.52f, 0.86f, 0.44f), pan = new Color(0.95f, 0.42f, 0.32f),
                 light = new Color(1f, 0.98f, 0.92f), lightIntensity = 1.2f,
-                ambient = new Color(0.5f, 0.6f, 0.5f), showClouds = false },
-            new Skin { name = "热带泻湖", bgTexture = "Backgrounds/bg_lagoon",
+                ambient = new Color(0.5f, 0.6f, 0.5f), showClouds = true },
+            new Skin { name = "热带泻湖",
                 sky = new Color(0.25f, 0.75f, 0.95f),
                 stage = new Color(0.99f, 0.95f, 0.85f), stageBase = new Color(0.35f, 0.78f, 0.85f),
-                seesaw = new Color(1f, 0.44f, 0.38f), pan = new Color(0.98f, 0.38f, 0.42f),
+                seesaw = new Color(1f, 0.44f, 0.38f), seat = new Color(0.38f, 0.9f, 0.86f), pan = new Color(0.98f, 0.38f, 0.42f),
                 light = new Color(1f, 0.98f, 0.94f), lightIntensity = 1.25f,
-                ambient = new Color(0.58f, 0.64f, 0.62f), showClouds = false },
-            new Skin { name = "冬日雪河", bgTexture = "Backgrounds/bg_winter",
+                ambient = new Color(0.58f, 0.64f, 0.62f), showClouds = true },
+            new Skin { name = "冬日雪河",
                 sky = new Color(0.45f, 0.8f, 0.98f),
                 stage = new Color(0.96f, 0.98f, 1f), stageBase = new Color(0.72f, 0.85f, 0.98f),
-                seesaw = new Color(0.3f, 0.5f, 0.97f), pan = new Color(0.25f, 0.45f, 0.92f),
+                seesaw = new Color(0.3f, 0.5f, 0.97f), seat = new Color(0.72f, 0.88f, 1f), pan = new Color(0.25f, 0.45f, 0.92f),
                 light = new Color(0.95f, 0.97f, 1f), lightIntensity = 1.2f,
-                ambient = new Color(0.55f, 0.6f, 0.68f), showClouds = false },
+                ambient = new Color(0.55f, 0.6f, 0.68f), showClouds = true },
         };
 
         Camera m_cam;
@@ -75,12 +73,10 @@ namespace MathSeesaw
         Renderer m_fulcrum;
         Renderer m_base;
         Renderer[] m_trays;
+        Renderer[] m_seats;
         CloudDrift[] m_clouds;
         Text m_skinLabel;
         int m_index;
-        float m_bgTextureAspect = 1f;
-        float m_lastBgAspect = -1f;
-        float m_lastBgOrthoSize = -1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoCreate()
@@ -95,7 +91,7 @@ namespace MathSeesaw
         void Start()
         {
             m_cam = Camera.main;
-            BindBackgroundReferences();
+            RemoveBackgroundReferences();
             m_light = FindFirstObjectByType<Light>();
             m_stage = FindRenderer("Stage");
             m_stageBase = FindRenderer("StageBase");
@@ -109,7 +105,12 @@ namespace MathSeesaw
                     trays.Add(r);
             m_trays = trays.ToArray();
 
-            EnsureBackgroundQuad();
+            var seats = new System.Collections.Generic.List<Renderer>();
+            foreach (var r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                if (r.name.StartsWith("Seat") || r.name.StartsWith("GroundSeat"))
+                    seats.Add(r);
+            m_seats = seats.ToArray();
+
             BuildUI();
 
             m_index = Mathf.Clamp(PlayerPrefs.GetInt(PrefKey, 0), 0, Skins.Length - 1);
@@ -121,8 +122,6 @@ namespace MathSeesaw
             var kb = Keyboard.current;
             if (kb != null && kb.bKey.wasPressedThisFrame)
                 Next();
-
-            UpdateBackgroundQuadLayout();
         }
 
         static Renderer FindRenderer(string name)
@@ -131,7 +130,7 @@ namespace MathSeesaw
             return go != null ? go.GetComponent<Renderer>() : null;
         }
 
-        void BindBackgroundReferences()
+        void RemoveBackgroundReferences()
         {
             if (backgroundRoot == null)
             {
@@ -140,72 +139,10 @@ namespace MathSeesaw
                     backgroundRoot = root.transform;
             }
 
-            if (backgroundQuad == null && backgroundRoot != null)
-                backgroundQuad = backgroundRoot.GetComponentInChildren<Renderer>(true);
-        }
-
-        void EnsureBackgroundQuad()
-        {
-            if (backgroundRoot == null)
-                backgroundRoot = new GameObject("Scene Background").transform;
-
-            if (backgroundQuad == null)
+            if (backgroundRoot != null)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                foreach (var c in go.GetComponents<Collider>())
-                    Destroy(c);
-                go.name = "SkyBackdrop";
-                go.transform.SetParent(backgroundRoot, false);
-
-                var shader = Shader.Find("Universal Render Pipeline/Unlit");
-                backgroundQuad = go.GetComponent<Renderer>();
-                backgroundQuad.material = new Material(shader);
-                backgroundQuad.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                backgroundRoot.gameObject.SetActive(false);
             }
-            UpdateBackgroundQuadLayout(true);
-        }
-
-        void UpdateBackgroundQuadLayout(bool force = false)
-        {
-            if (m_cam == null || backgroundQuad == null)
-                return;
-
-            float aspect = Mathf.Max(m_cam.aspect, 0.01f);
-            float orthographicSize = m_cam.orthographic ? m_cam.orthographicSize : -1f;
-            if (!force &&
-                Mathf.Approximately(aspect, m_lastBgAspect) &&
-                Mathf.Approximately(orthographicSize, m_lastBgOrthoSize))
-                return;
-
-            m_lastBgAspect = aspect;
-            m_lastBgOrthoSize = orthographicSize;
-
-            float height;
-            float width;
-            if (m_cam.orthographic)
-            {
-                height = m_cam.orthographicSize * 2f;
-                width = height * aspect;
-            }
-            else
-            {
-                height = 2f * BackgroundDistance * Mathf.Tan(m_cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
-                width = height * aspect;
-            }
-
-            float viewAspect = width / Mathf.Max(height, 0.01f);
-            float bgWidth = width;
-            float bgHeight = height;
-            if (m_bgTextureAspect > viewAspect)
-                bgWidth = bgHeight * m_bgTextureAspect;
-            else
-                bgHeight = bgWidth / Mathf.Max(m_bgTextureAspect, 0.01f);
-
-            const float bleed = 1.08f;
-            var bgTransform = backgroundQuad.transform;
-            bgTransform.position = m_cam.transform.TransformPoint(new Vector3(0f, height * 0.08f, BackgroundDistance));
-            bgTransform.rotation = m_cam.transform.rotation;
-            bgTransform.localScale = new Vector3(bgWidth * bleed, bgHeight * bleed, 1f);
         }
 
         void BuildUI()
@@ -227,7 +164,7 @@ namespace MathSeesaw
             var rt = img.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
             rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(30f, -60f);
+            rt.anchoredPosition = new Vector2(330f, -60f);
             rt.sizeDelta = new Vector2(230f, 110f);
             btnGo.GetComponent<Button>().onClick.AddListener(Next);
 
@@ -259,22 +196,8 @@ namespace MathSeesaw
         {
             var skin = Skins[index];
 
-            m_cam.backgroundColor = skin.sky;
-            if (string.IsNullOrEmpty(skin.bgTexture))
-            {
-                backgroundQuad.gameObject.SetActive(false);
-            }
-            else
-            {
-                var tex = Resources.Load<Texture2D>(skin.bgTexture);
-                backgroundQuad.gameObject.SetActive(tex != null);
-                if (tex != null)
-                {
-                    backgroundQuad.material.SetTexture("_BaseMap", tex);
-                    m_bgTextureAspect = tex.width / (float)Mathf.Max(tex.height, 1);
-                    UpdateBackgroundQuadLayout(true);
-                }
-            }
+            if (m_cam != null)
+                m_cam.backgroundColor = skin.sky;
 
             if (m_light != null)
             {
@@ -289,6 +212,8 @@ namespace MathSeesaw
             Tint(m_base, skin.seesaw);
             foreach (var t in m_trays)
                 Tint(t, skin.pan);
+            foreach (var s in m_seats)
+                Tint(s, skin.seat);
 
             foreach (var c in m_clouds)
                 if (c != null)
