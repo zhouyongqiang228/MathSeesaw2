@@ -17,7 +17,6 @@ namespace MathSeesaw
         public LevelDatabase levelDatabase;
 
         [Header("Scene References")]
-        public Camera sceneCamera;
         public Light directionalLight;
         public Transform environmentRoot;
         public Transform putMansRoot;
@@ -25,16 +24,17 @@ namespace MathSeesaw
         public GameUI gameUI;
         public GameObject putManTemplate;
 
-        [Header("Runtime Fallback")]
-        public bool buildMissingSceneObjects = true;
+        [Header("Runtime Scene Policy")]
+        public bool allowRuntimeSceneFallback;
 
         [Header("Layout")]
         public float beamLength = 6.6f;
         public float panOffsetX = 2.5f;
+        [Min(0)] public int defaultLeftSeatCount = 4;
+        [Min(0)] public int defaultRightSeatCount = 4;
         public float manHeight = 1.16f;
         public Vector3 manPickPadding = new Vector3(0.36f, 0.12f, 0.36f);
 
-        static readonly Color SkyColor = new Color(0.4235f, 0.8392f, 0.9961f);
         static readonly Color IceColor = new Color(0.86f, 0.94f, 1f);
         static readonly Color IceDarkColor = new Color(0.62f, 0.78f, 0.92f);
         static readonly Color PanColor = new Color(0.72f, 0.42f, 0.92f);
@@ -60,8 +60,19 @@ namespace MathSeesaw
             CacheAssets();
             LoadLevelData();
 
-            if (!BindSceneReferences() && buildMissingSceneObjects)
-                BuildEditableScene();
+            if (!BindSceneReferences())
+            {
+                if (allowRuntimeSceneFallback)
+                {
+                    BuildEditableSceneFallback();
+                }
+                else
+                {
+                    Debug.LogError("GameBootstrap is missing scene references. Runtime scene building is disabled, so the hand-authored Unity scene will not be modified.");
+                    enabled = false;
+                    return;
+                }
+            }
 
             ConfigureLevelController();
             ConfigurePutMans();
@@ -72,17 +83,19 @@ namespace MathSeesaw
                 AudioManager.Instance.PlayGameMusic();
         }
 
-        public void BuildEditableScene()
+        [ContextMenu("Build Editable Scene Fallback")]
+        public void BuildEditableSceneFallback()
         {
+            Debug.LogWarning("Building fallback scene objects from code. Use only as an editor/dev bootstrap, then save or prefab the result before shipping.");
             CacheAssets();
-            sceneCamera = BuildCamera();
             directionalLight = BuildLight();
             environmentRoot = BuildEnvironment();
 
             levelController = GetComponent<LevelController>();
             if (levelController == null)
                 levelController = gameObject.AddComponent<LevelController>();
-            levelController.cam = sceneCamera;
+            if (Camera.main != null)
+                levelController.cam = Camera.main;
             levelController.seesawMode = seesawMode;
             levelController.seesaws.Clear();
             levelController.putMans.Clear();
@@ -122,8 +135,6 @@ namespace MathSeesaw
 
         bool BindSceneReferences()
         {
-            if (sceneCamera == null)
-                sceneCamera = Camera.main;
             if (directionalLight == null)
                 directionalLight = FindObjectOfType<Light>();
             if (environmentRoot == null)
@@ -143,22 +154,31 @@ namespace MathSeesaw
             if (gameUI == null)
                 gameUI = GetComponent<GameUI>();
 
-            return sceneCamera != null && levelController != null && levelController.seesaws.Count > 0 && putMansRoot != null;
+            return Camera.main != null && levelController != null && levelController.seesaws.Count > 0 && putMansRoot != null;
         }
 
         void ConfigureLevelController()
         {
             if (levelController == null)
                 levelController = gameObject.AddComponent<LevelController>();
-            if (sceneCamera == null)
-                sceneCamera = Camera.main;
-
-            levelController.cam = sceneCamera;
+            if (Camera.main != null)
+                levelController.cam = Camera.main;
             levelController.seesawMode = seesawMode;
+            levelController.activeSeesawCount = seesawMode == SeesawMode.Double ? 2 : 1;
 
             if (levelController.seesaws.Count == 0)
                 levelController.seesaws.AddRange(FindObjectsOfType<Blance>());
             levelController.seesaws.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            foreach (var seesaw in levelController.seesaws)
+            {
+                if (seesaw == null)
+                    continue;
+                if (seesaw.leftSeatCount <= 0)
+                    seesaw.leftSeatCount = defaultLeftSeatCount;
+                if (seesaw.rightSeatCount <= 0)
+                    seesaw.rightSeatCount = defaultRightSeatCount;
+                seesaw.ApplySeatCounts();
+            }
 
             levelController.SwitchSeesawMode(seesawMode);
         }
@@ -237,22 +257,6 @@ namespace MathSeesaw
             seesawMode = mode;
             if (levelController != null)
                 levelController.SwitchSeesawMode(mode);
-        }
-
-        Camera BuildCamera()
-        {
-            var go = new GameObject("Main Camera");
-            go.tag = "MainCamera";
-            var cam = go.AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = SkyColor;
-            cam.orthographic = true;
-            cam.orthographicSize = 6f;
-            cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 100f;
-            go.transform.SetPositionAndRotation(new Vector3(0f, 3.4f, -9.5f), Quaternion.Euler(13f, 0f, 0f));
-            go.AddComponent<AudioListener>();
-            return cam;
         }
 
         Light BuildLight()
@@ -377,8 +381,11 @@ namespace MathSeesaw
 
             var blance = root.gameObject.AddComponent<Blance>();
             blance.upComponent = up;
+            blance.leftSeatCount = defaultLeftSeatCount;
+            blance.rightSeatCount = defaultRightSeatCount;
             blance.leftPan = BuildPan(up, true, new Vector3(-panOffsetX, beamTop, 0f));
             blance.rightPan = BuildPan(up, false, new Vector3(panOffsetX, beamTop, 0f));
+            blance.ApplySeatCounts();
 
             return blance;
         }
@@ -422,9 +429,12 @@ namespace MathSeesaw
             panGo.transform.localPosition = localPos;
             var pan = panGo.AddComponent<NumContainerPan>();
 
-            float[] xs = { -0.9f, -0.3f, 0.3f, 0.9f };
-            foreach (float x in xs)
+            int maxSeats = Mathf.Max(defaultLeftSeatCount, defaultRightSeatCount, 1);
+            pan.seatSpacing = 0.6f;
+            float startX = -(maxSeats - 1) * pan.seatSpacing * 0.5f;
+            for (int i = 0; i < maxSeats; i++)
             {
+                float x = startX + i * pan.seatSpacing;
                 var seat = CreatePart(PrimitiveType.Cylinder, panGo.transform, "Seat", SeatColor,
                     new Vector3(x, 0.12f, 0f), new Vector3(0.5f, 0.055f, 0.5f));
                 var stand = new GameObject("StandPoint").transform;
@@ -544,6 +554,7 @@ namespace MathSeesaw
                 {
                     if (seesaw == null)
                         continue;
+                    seesaw.ApplySeatCounts();
                     AdjustPanVisuals(seesaw.leftPan);
                     AdjustPanVisuals(seesaw.rightPan);
                 }
@@ -567,20 +578,6 @@ namespace MathSeesaw
                     staleParts.Add(child.gameObject);
             foreach (var part in staleParts)
                 DestroyUnityObject(part);
-
-            float[] xs = { -0.9f, -0.3f, 0.3f, 0.9f };
-            for (int i = 0; i < pan.places.Count; i++)
-            {
-                var place = pan.places[i];
-                float x = xs[Mathf.Min(i, xs.Length - 1)];
-                if (place.seatRenderer != null)
-                {
-                    place.seatRenderer.transform.localPosition = new Vector3(x, 0.12f, 0f);
-                    place.seatRenderer.transform.localScale = new Vector3(0.5f, 0.055f, 0.5f);
-                }
-                if (place.standPoint != null)
-                    place.standPoint.localPosition = new Vector3(x, 0.17f, 0f);
-            }
 
             if (pan.textTotal != null)
             {

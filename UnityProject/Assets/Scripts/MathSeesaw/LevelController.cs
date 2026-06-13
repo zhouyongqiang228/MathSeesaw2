@@ -17,6 +17,17 @@ namespace MathSeesaw
         public float dragFollowSpeed = 22f;
         public float dragLift = 0.45f;
         public float dragScale = 1.12f;
+        [Range(1, 2)] public int activeSeesawCount = 1;
+
+        [Header("Camera Framing")]
+        public Vector3 singleCameraPosition = new Vector3(0f, 7f, -7f);
+        public Vector3 singleCameraRotation = new Vector3(30f, 0f, 0f);
+        public Vector3 doubleCameraPosition = new Vector3(0f, 7.5f, -9f);
+        public Vector3 doubleCameraRotation = new Vector3(34f, 0f, 0f);
+        public float singleCameraSize = 6f;
+        public float doubleCameraSize = 7.2f;
+        public bool frameActiveSeesaws = true;
+        public float cameraFramePadding = 1.35f;
 
         PutMan m_dragMan;
         ManPlace m_hoverPlace;
@@ -26,12 +37,7 @@ namespace MathSeesaw
         GameObject m_previewGhost;
 
         const float ReferencePortraitAspect = 2048f / 2732f;
-        const float BaseOrthographicSize = 6f;
-
-        Vector3 m_singleCameraPos = new Vector3(0f, 7f, -7f);
-        Vector3 m_singleCameraRot = new Vector3(30f, 0f, 0f);
-        Vector3 m_doubleCameraPos = new Vector3(0f, 7f, -7f);
-        Vector3 m_doubleCameraRot = new Vector3(30f, 0f, 0f);
+        float m_baseOrthographicSize = 6f;
         readonly List<Vector3> m_initialSeesawPositions = new List<Vector3>();
         float m_lastAspect = -1f;
 
@@ -43,7 +49,10 @@ namespace MathSeesaw
         {
             CacheSeesawPositions();
             foreach (var seesaw in seesaws)
+            {
+                seesaw.ApplySeatCounts();
                 seesaw.onRotateOver = CheckAndDealGameOver;
+            }
             UpdateScore(true);
             ApplyCameraSettings();
 
@@ -54,37 +63,23 @@ namespace MathSeesaw
         public void SwitchSeesawMode(SeesawMode mode)
         {
             seesawMode = mode;
-            ApplyCameraSettings();
+            activeSeesawCount = mode == SeesawMode.Double ? 2 : 1;
             CacheSeesawPositions();
 
-            // Show/hide seesaws based on mode
-            if (mode == SeesawMode.Single)
+            int count = Mathf.Clamp(activeSeesawCount, 1, Mathf.Max(1, seesaws.Count));
+            for (int i = 0; i < seesaws.Count; i++)
             {
-                if (seesaws.Count > 0)
-                {
-                    seesaws[0].gameObject.SetActive(true);
-                    seesaws[0].transform.position = m_initialSeesawPositions[0];
-                }
-                if (seesaws.Count > 1)
-                {
-                    seesaws[1].gameObject.SetActive(false);
-                }
-            }
-            else // Double mode
-            {
-                if (seesaws.Count > 0)
-                {
-                    seesaws[0].gameObject.SetActive(true);
-                    seesaws[0].transform.position = m_initialSeesawPositions[0];
-                }
-                if (seesaws.Count > 1)
-                {
-                    seesaws[1].gameObject.SetActive(true);
-                    seesaws[1].transform.position = m_initialSeesawPositions[1];
-                }
+                if (seesaws[i] == null)
+                    continue;
+                bool active = i < count;
+                seesaws[i].gameObject.SetActive(active);
+                if (i < m_initialSeesawPositions.Count)
+                    seesaws[i].transform.position = m_initialSeesawPositions[i];
+                if (active)
+                    seesaws[i].ApplySeatCounts();
             }
 
-            // Update scores after switching
+            ApplyCameraSettings();
             UpdateScore(true);
         }
 
@@ -96,17 +91,62 @@ namespace MathSeesaw
 
         void ApplyCameraSettings()
         {
+            if (cam == null)
+                return;
+
             if (seesawMode == SeesawMode.Single)
             {
-                cam.transform.position = m_singleCameraPos;
-                cam.transform.rotation = Quaternion.Euler(m_singleCameraRot);
+                cam.transform.position = singleCameraPosition;
+                cam.transform.rotation = Quaternion.Euler(singleCameraRotation);
+                m_baseOrthographicSize = singleCameraSize;
             }
             else
             {
-                cam.transform.position = m_doubleCameraPos;
-                cam.transform.rotation = Quaternion.Euler(m_doubleCameraRot);
+                cam.transform.position = doubleCameraPosition;
+                cam.transform.rotation = Quaternion.Euler(doubleCameraRotation);
+                m_baseOrthographicSize = doubleCameraSize;
             }
+            if (frameActiveSeesaws)
+                FrameActiveSeesaws();
             ApplyResponsiveCameraSize(true);
+        }
+
+        void FrameActiveSeesaws()
+        {
+            if (cam == null || !cam.orthographic)
+                return;
+
+            Bounds bounds = default;
+            bool hasBounds = false;
+            foreach (var seesaw in seesaws)
+            {
+                if (seesaw == null || !seesaw.gameObject.activeSelf)
+                    continue;
+
+                foreach (var renderer in seesaw.GetComponentsInChildren<Renderer>())
+                {
+                    if (!renderer.enabled)
+                        continue;
+                    if (!hasBounds)
+                    {
+                        bounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                }
+            }
+
+            if (!hasBounds)
+                return;
+
+            Vector3 center = bounds.center;
+            cam.transform.position = new Vector3(center.x, cam.transform.position.y, cam.transform.position.z);
+            float depthSize = Mathf.Max(bounds.size.z * 0.55f, bounds.size.y) + cameraFramePadding;
+            float widthSize = bounds.size.x / Mathf.Max(cam.aspect, 0.01f) * 0.55f + cameraFramePadding;
+            m_baseOrthographicSize = Mathf.Max(m_baseOrthographicSize, depthSize, widthSize);
         }
 
         void ApplyResponsiveCameraSize(bool force = false)
@@ -120,7 +160,7 @@ namespace MathSeesaw
 
             m_lastAspect = aspect;
             float widthFitScale = Mathf.Max(1f, ReferencePortraitAspect / aspect);
-            cam.orthographicSize = BaseOrthographicSize * widthFitScale;
+            cam.orthographicSize = m_baseOrthographicSize * widthFitScale;
         }
 
         void Update()
@@ -358,8 +398,12 @@ namespace MathSeesaw
                 if (!seesaw.gameObject.activeSelf) continue;
                 foreach (var pan in new[] { seesaw.leftPan, seesaw.rightPan })
                 {
+                    if (pan == null)
+                        continue;
                     foreach (var p in pan.places)
                     {
+                        if (p == null || !p.RuntimeAvailable)
+                            continue;
                         if (!p.IsEmpty) continue;
 
                         Vector3 placeScreenPos = cam.WorldToScreenPoint(p.standPoint.position);

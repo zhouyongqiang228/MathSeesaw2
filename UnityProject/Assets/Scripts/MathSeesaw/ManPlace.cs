@@ -12,6 +12,7 @@ namespace MathSeesaw
 
         public PutMan PuttedMan { get; private set; }
         public bool Locked { get; set; }
+        public bool RuntimeAvailable { get; private set; } = true;
 
         Color m_baseColor;
         Vector3 m_baseScale;
@@ -25,7 +26,7 @@ namespace MathSeesaw
             m_baseScale = seatRenderer.transform.localScale;
         }
 
-        public bool IsEmpty => PuttedMan == null && !Locked;
+        public bool IsEmpty => RuntimeAvailable && PuttedMan == null && !Locked;
 
         public bool SetMan(PutMan man)
         {
@@ -60,9 +61,23 @@ namespace MathSeesaw
 
         public void SetHighlight(bool on)
         {
+            if (!RuntimeAvailable || seatRenderer == null)
+                return;
             CacheVisual();
             seatRenderer.material.color = on ? Color.Lerp(m_baseColor, Color.white, 0.18f) : m_baseColor;
             seatRenderer.transform.localScale = on ? m_baseScale * 1.06f : m_baseScale;
+        }
+
+        public void SetRuntimeAvailable(bool available)
+        {
+            RuntimeAvailable = available;
+            Locked = !available;
+            if (!available)
+                ClearMan();
+            if (seatRenderer != null)
+                seatRenderer.gameObject.SetActive(available);
+            if (standPoint != null)
+                standPoint.gameObject.SetActive(available);
         }
     }
 }

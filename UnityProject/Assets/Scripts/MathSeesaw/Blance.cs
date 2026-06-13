@@ -13,6 +13,8 @@ namespace MathSeesaw
         public Transform upComponent;
         public NumContainerPan leftPan;
         public NumContainerPan rightPan;
+        [Min(0)] public int leftSeatCount = 4;
+        [Min(0)] public int rightSeatCount = 4;
 
         public Action onRotateOver;
 
@@ -20,6 +22,25 @@ namespace MathSeesaw
         int m_rightWeight;
         bool m_initialized;
         Coroutine m_rotateCo;
+
+        void Awake()
+        {
+            ApplySeatCounts();
+        }
+
+        void OnValidate()
+        {
+            if (!Application.isPlaying)
+                ApplySeatCounts();
+        }
+
+        public void ApplySeatCounts()
+        {
+            if (leftPan != null)
+                leftPan.ApplySeatCount(leftSeatCount);
+            if (rightPan != null)
+                rightPan.ApplySeatCount(rightSeatCount);
+        }
 
         public static float GetAngleByWeight(int left, int right)
         {

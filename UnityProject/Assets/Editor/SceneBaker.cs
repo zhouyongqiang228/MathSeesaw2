@@ -32,8 +32,8 @@ public static class SceneBaker
         DeleteChildIfExists(bootstrap.transform, "Canvas_Battle");
         DeleteChildIfExists(bootstrap.transform, "EventSystem");
 
-        bootstrap.buildMissingSceneObjects = false;
-        bootstrap.BuildEditableScene();
+        bootstrap.allowRuntimeSceneFallback = false;
+        bootstrap.BuildEditableSceneFallback();
 
         EditorUtility.SetDirty(bootstrap);
         EditorSceneManager.MarkSceneDirty(scene);
